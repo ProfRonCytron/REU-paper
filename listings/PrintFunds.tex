@@ -1,0 +1,19 @@
+\begin{lstlisting}[language = Scala]
+class PrintFunds extends Aspect[NFA] {
+  def apply(nfa: NFA) = {
+
+    val tokenPointcut = Pointcutter[Token, Coin](nfa.alphabet, token => token match {
+      case t: Coin => true
+      case _ => false
+    })
+
+    AfterToken[Coin](tokenPointcut, nfa)((thisJoinpoint: TokenJoinpoint[Coin], thisNFA: NFA) => {
+      var value = thisJoinpoint.out.asInstanceOf[ValueState].value
+      thisJoinpoint.out match {
+        case s: PrinterState if (s.action == "Funds:" + value.toString) => (None, thisNFA)
+        case _ => (Some((PrinterState("Funds:" + value, value, false), Lambda)), thisNFA)
+      }
+    })
+  }
+}
+\end{lstlisting}
