@@ -239,22 +239,24 @@
 
 \section{Introduction}
 
-The advent of hardware-generation languages~\cite{hwgen} has promoted the adoption of techniques and abstractions by hardware designers that were previously available only to software systems and their designers.   Hardware-characterization languages such as VHDL~\cite{vhdl} and Verilog~\cite{verilog} describe the components and interconnections of hardware circuit elements, much like HTML describes the components and references of a web page.  While those languages provide some abstractions (such as arithmetic operations and restrictive macros), the paradigms and practices used widely in successful software engineering efforts are largely unavailable.
+The advent of hardware-generation languages~\cite{chisel:article} has promoted the adoption of techniques and abstractions by hardware designers that were previously available only to software systems and their designers. Hardware-characterization languages such as VHDL~\cite{vhdl} and Verilog~\cite{verilog} describe the components and interconnections of hardware circuit elements, much like HTML describes the components and references of a web page. While those languages provide some abstractions (such as arithmetic operations and restrictive macros), the paradigms and practices used widely in successful software engineering efforts are largely unavailable.
 
-By contrast, hardware-generation approaches allow a designer to write a program, and the output of that program's execution is the hardware design.  The program can be authored using paradigms that promote efficient software construction, reuse, rigorous testing, and clarity of expression.  Our work in this paper builds on the hardware-generation language Chisel~\cite{chisel:book}, which is in turn built on Scala~\cite{scala-overview-tech-report}.   Chisel is essentially a Scala library that generates Verilog when a hardware design is executed.
+By contrast, hardware-generation approaches allow a designer to write a program, and the output of that program's execution is the hardware design. The program can be authored using paradigms that promote efficient software construction, reuse, rigorous testing, and clarity of expression. Our work in this paper builds on the hardware-generation language Chisel~\cite{chisel:book}, which is in turn built on Scala~\cite{scala-overview-tech-report}. Chisel is essentially a Scala library that generates Verilog when a hardware design is executed.
 
-A simple and recent example showing the advantages of hardware generation over characterization concerns an adder~\cite{Deters:adder}.   Using VHDL, a hardware designer can request that an adder circuit be optimized for either for delay (carry lookahead) or for area (carry propagate).   Using Chisel, an adder can be specified that combines both forms of carry computation, to meet a timing or area constraint while otherwise optimized in the other dimension.
+A simple and recent example showing the advantages of hardware generation over characterization concerns an adder~\cite{Deters:adder}. Using VHDL, a hardware designer can request that an adder circuit be optimized for either for delay (carry lookahead) or for area (carry propagate). Using Chisel, an adder can be specified that combines both forms of carry computation, to meet a timing or area constraint while otherwise optimized in the other dimension.
 
 Chisel has also proven itself robust in pedagogy and industry, serving as the basis for courses in digital logic~\cite{vlsicourse} and serving as a platform for describing RISC-V systems~\cite{chisel:riscv}.  Our long-term goal \pnote{What is our long-term goal?}
 
-In this paper, we consider a feature-oriented approach to generating hardware, specifically finite state machines. A given feature can affect multiple regions of a finite state machine.  For example, the cache system  we consider in Section~\ref{sec:cache} could use write-back or write-through in response to a store operation.  Expressed as a feature, write-back affects both the store operation (marking the line dirty) and the fetch operation (causing dirty lines to be written to the backing store on eviction).  Aspect-oriented programming (AOP)~\cite{aop} is a paradigm well suited to expression of cross-cutting concerns that affect multiple regions of software systems.  For example, AspectJ~\cite{aspectj} allows expression of advice that is applied at prescribed join points of a software system written in Java.  While our thinking is aspectual in terms of formulating a feature-oriented approach to finite state machines, we are fortunate that hardware generation languages such as Chisel suffice to express the requisite transformations:  no new language is needed.
+\jnote{This transition feels a little abrupt.}In this paper, we consider a feature-oriented approach to generating hardware, specifically finite state machines. A given feature can affect multiple regions of a finite state machine. For example, the cache system  we consider in Section~\ref{sec:cache} could use write-back or write-through in response to a store operation. Expressed as a feature, write-back affects both the store operation (marking the line dirty) and the fetch operation (causing dirty lines to be written to the backing store on eviction). Aspect-oriented programming (AOP)~\cite{aop} is a paradigm well suited to expression of cross-cutting concerns that affect multiple regions of software systems. For example, AspectJ~\cite{aspectj} allows expression of advice that is applied at prescribed join points of a software system written in Java. While our thinking is aspectual in terms of formulating a feature-oriented approach to finite state machines, we are fortunate that hardware generation languages such as Chisel suffice to express the requisite transformations:  no new language is needed.
 
-In Section~\ref{sec:prior} we summarize feature-oriented approaches for software systems and other inspirations for our work.  As compared with monolithic designs, feature-oriented systems omit unnecessary code, resulting in smaller footprint and higher throughput.
-Sections~\ref{sec:decomp} and~\ref{sec:formal} describe a feature-oriented approach for generating finite state machines using two complementary techniques.  We illustrate those techniques separately on the examples of a vending machine (Section~\ref{sec:vend}) and the game of Nim (Section~\ref{sec:nim}). In Section~\ref{sec:cache}, the techniques are then applied in concert to generate a multiprocessor cache with a simple coherence protocol.
+In Section~\ref{sec:prior} we summarize feature-oriented approaches for software systems and other inspirations for our work. As compared with monolithic designs, feature-oriented systems omit unnecessary code, resulting in smaller footprint and higher throughput.
+Sections~\ref{sec:decomp} and~\ref{sec:formal} describe a feature-oriented approach for generating finite state machines using two complementary techniques. We illustrate those techniques separately on the examples of a vending machine (Section~\ref{sec:vend}) and the game of Nim (Section~\ref{sec:nim}). In Section~\ref{sec:cache}, the techniques are then applied in concert to generate a multiprocessor cache with a simple coherence protocol.
 
-\section{Prior Work}\label{sec:prior}
+\section{Prior work and motivation}\label{sec:prior}
 
-Our work builds on a programming paradigm available in the software community that efficiently supports the expression and application of \emph{cross-cutting} concerns in a software system.  Aspect-Oriented Programming~(AOP)~\cite{Kicz97} and its realization in systems such as AspectJ~\cite{aspectj} allow developers to express ideas in a software system that affect multiple components of that system in support of a common idea or feature.   A commonly cited example is the implementation of a logging feature, so that every method when called and prior to returning logs those events to some output stream.   Absent an AOP approach, a developer is faced with the following difficulties:
+\subsection{Feature-oriented programming}\label{sec:priorfop}
+
+Our work builds on a programming paradigm available in the software community that efficiently supports the expression and application of \emph{cross-cutting} concerns in a software system.  Aspect-Oriented Programming~(AOP)~\cite{Kicz97} and its realization in systems such as AspectJ~\cite{aspectj} allow developers to express ideas in a software system that affect multiple components of that system in support of a common idea or feature. A commonly cited example is the implementation of a logging feature, so that every method when called and prior to returning logs those events to some output stream. Absent an AOP approach, a developer is faced with the following difficulties:
 \begin{itemize}
     \item Implementation of the feature would require modifying every method at its entry and every possible exit so that it emitted the proper log messages.  This is both tedious and error-prone, especially if methods can exit due to unforeseen actions such as exceptions.
     \item Removing the feature, should it no longer be needed, is also tedious and error-prone.
@@ -268,16 +270,48 @@ Macro processors can achieve the proper effect, namely including the code only w
 
 AOP is the perfect solution to this and similar problems, because a developer can specify that at \emph{every} method entry and exit (other than the method that does the logging), a segment of code should be inserted to accomplish the appropriate logging.  If the logging is no longer desired, the associated aspect is simply omitted when building the system.  In this way, both originally and upon modification, all methods' entries and exits are properly logged.
 
-Feature-Oriented Programming~(FOP)~\cite{prehofer1997feature} builds on this idea by expressing features in an aspectual manner.   Expressed in this manner, a feature is essentially a recipe for rewriting a software system to implement the feature.   The common example given for this paradigm is that of a \emph{cache}, say in a web browser.  Where the browser would normally issue a request to a web site on behalf of a given URL (which could take some time), the cache feature would first check if the browser had recently fetched that URL, satisfying the request with the cached information. Implementation of this feature requires storage to hold previously fetched information, code to manage that storage, and a rewrite of the base system to cause the cache to be consulted prior to issuing the web request.  Expressed aspectually, a cache could be imposed throughout the browser, in any situation where such a web request could be made.
+Feature-Oriented Programming~(FOP)~\cite{prehofer1997feature} builds on this idea by expressing features in an aspectual manner. A feature is essentially a recipe for rewriting a software system to implement the feature. The common example given for this paradigm is that of a \emph{cache}, say in a web browser.  Where the browser would normally issue a request to a web site on behalf of a given URL (which could take some time), the cache feature would first check if the browser had recently fetched that URL, satisfying the request with the cached information. Implementation of this feature requires storage to hold previously fetched information, code to manage that storage, and a rewrite of the base system to cause the cache to be consulted prior to issuing the web request. Expressed aspectually, a cache could be imposed throughout the browser, in any situation where such a web request could be made. \jnote{Do we have anything that could introduce the cross-product features?}
 
-The feature on its own is insufficient to realize any benefits.  The software system must be written in such a way to accept the feature. As more features are conceived and implemented, the base system and any extant features may require revision.   In the end, a system is obtained where orthogonal features compose effortlessly, in any combination, to realize a desired subset of all possible features.
+The feature on its own is insufficient to realize any benefits. The software system must be written in such a way to accept the feature. As more features are conceived and implemented, the base system and any extant features may require revision. In the end, a system is obtained where orthogonal features compose effortlessly, in any combination, to realize a desired subset of all possible features.
 
 This approach to creating featureful systems has the empirical advantages described below. This approach has also been attractive for managing product lines in which features evolve over time, affecting not only the base system but also other features~\cite{10.1145/2897695.2897701}.
 
-An example that has been treated with this approach is the CORBA~\cite{} Event Channel~\cite{}.  The standard implementation is \emph{monolithic}, offering all possible features in all allowable combinations.    
-When expressed in terms of composable features, the 
+An example that has been treated with this approach is the CORBA~\cite{CORBA:00} Event Channel~\cite{CORBAService:02a}. The standard implementation is \emph{monolithic}, offering all possible features in all allowable combinations.    
+When expressed in terms of composable features, configurations of interest could be generated that contained only those desired features (and their dependencies).
 
-\section{Running Example: Vending Machine}
+\rnote{Ron talks about the efficiency results. if room, we can provide a graph.  must be anonymous}
+
+In this paper we consider applying a feature-oriented approach to specifying hardware designs, namely finite-state machines.
+The resulting designs enjoy the same benefits as the software systems we describe above:
+\begin{itemize}
+    \item Smaller footprint results by including only those features of interest.
+    \item The clock rate of the resulting systems is determined only by active features:  logic related to inactive features is completely absent from the resulting designs.
+\end{itemize}
+
+\subsection{Generative programming}\label{sec:priorgen}
+Our approach to building FSMs is generative~\cite{10.1007/11527800_24} in the following ways:
+\begin{itemize}
+    \item A Chisel program generates a hardware specification by its execution.  Thus, Chisel allows us to generate FSMs without the burden of developing a specific AOP language for our work.
+    \item Our FOP approach generates an FSM that incorporates only those features of interest.  This is demonstrated by the vending machine example of Section~\ref{sec:vend}, in which construction of even the simplest, base machine is driven automatically by allowable currency values.  If there are $k$ orthogonal features in a system, each present or not, then our approach allows the generation of~$O(2^{k})$ potential systems using~$O(k)$ space to express those features.
+    \item As demonstrated in Section~\ref{sec:nim}, a given feature may benefit in our approach from factoring it into simpler FSMs that are insufficient on their own, but whose \emph{cross product} achieves a desired feature.  Here also as specification that takes~$O(k)$ space can generate an FSM of size~$O(2^{k})$.
+\end{itemize}
+Our generative approach to building FSMs thus has the following advantages:
+\begin{itemize}
+    \item The realization of very large FSMs can be achieved correctly by construction.
+    \item The resulting FSMs contain only those features of interest and their dependencies.
+    \item By limiting our work to FSMs, many properties of the resulting systems can be proven.  We discuss this next.
+\end{itemize}
+\rnote{check that we use FSM and finite-state machine properly throughout}
+  
+\subsection{Decidability}\label{sec:decide}
+
+The theory of regular languages and finite-state machines allows that questions related to properties of the behavior of such machines have definite and algorithmically obtained answers~\cite{sipser}. For example, consider a feature that is intended to \emph{extend} the behavior of a design, so that all previous inputs are allowed but the feature introduces some other allowable inputs. For example, consider an FSM that scans characters to parse them as decimal numerals.  An extension might allow for hexadecimal numerals, if the input begins with ``0x''.  We would like to prove that the extended language is indeed a proper superset of the original language, which is possible for finite-state machines.
+
+While beyond the scope of this paper, we aim to use \emph{timed automata}~\cite{10.1145/2518102} to reason about real-time properties of finite-state machines generated by our approach.
+
+\rnote{why doesn't this section also describe NIM in a subsection?  Why is there another subsection for this later in the paper?}
+\jnote{I don't have an issue with introducing Nim here. I was thinking that it would be easier to describe things if we had it here.}
+\section{Running Examples}
 \subsection{Vending Machine}\label{sec:vend}
 We will utilize a vending machine as a motivating example in the following sections. A vending machine is an apt example for our technique as it not only has a complex internal state (it must keep track of the amount of money inserted, which product to dispense, etc), but also many different features that could be required. Below we have listed features one might find. Figure~\ref{fig:vmDependencies} shows the dependencies between all the features in the vending machine.
 
@@ -291,15 +325,20 @@ We will utilize a vending machine as a motivating example in the following secti
     \item Buy More: Allow the customer to buy as many products as they want until the value in the machine reaches zero.
 \end{itemize}
 
-\begin{figure}[htbp]
+\begin{figure}[h]
     \centering
     \includegraphics{figures/VendingMachine.pdf}
     \caption{Dependencies between vending machine features.}
     \label{fig:vmDependencies}
 \end{figure}
 
+\subsection{Nim}
+
 \section{Feature Decomposition}\label{sec:decomp}
-\jnote{Do we need to talk about abstract and concrete features here or just point people to prior work?}
+A \textbf{feature} in our system is a collection of states, transitions, or a combination of both, that can be selectively added to a finite state machine. Features can be decomposed into cross-cutting concerns, stand alone finite state machines, or a combination of the both. 
+
+\jnote{Talk about moore machines?}
+ 
 \subsection{Cross-Cutting Features}
 
 \subsection{Cross Product Features}
@@ -310,7 +349,7 @@ We have developed formalisms to describe each of the feature decomposition techn
 \subsection{Cross Cutting Features}
 Any path through the FSM can be described as a sequence of alternating states and input tokens. For example, the FSM in Figure~\ref{fig:example} contains two paths from the start to accept state: $XxYyZ$ and $XtZ$. When we apply features to the FSM we change the paths through the machine, thus also changing the accepted language.
 
-\begin{figure}[htb]
+\begin{figure}[h]
     \centering
     \includegraphics{figures/ExampleFSM.pdf}
     \caption{Example FSM}
@@ -385,18 +424,18 @@ Let $M_1 = (Q_1, \Sigma_1, \delta_1, q_{01}, F_1)$ and $M_2 = (Q_2, \Sigma_2, \d
 
 
 \section{Foam: Aspect Oriented Finite State Machine Library}
-We have implemented an aspect oriented finite state machine library, which we call Foam,  in Scala\footnote{https://github.com/wustl-frisc/foam}. In this section we detail the programmer interface as well as how the library generates usable source code. Following our vending machine example, Figure \ref{lst:PrintFunds} shows the implmentation of the \textbf{Print Funds} feature in Foam.
+We have implemented an aspect oriented finite state machine library, which we call Foam,  in Scala\footnote{https://github.com/wustl-frisc/foam}. In this section we detail the programmer interface as well as how the library generates usable source code. Following our vending machine example, Figure~\ref{lst:PrintFunds} shows the implementation of the \textbf{Print Funds} feature in Foam.
 
 \subsection{Interface}
 While Foam is not a fully fledged domain specific language, we have modeled the interface after the well established aspect-oriented extension to Java, AspectJ~\cite{}. The intention is to give aspect-oriented practitioners a familiar interface for interacting with the finite state machines. Since the library is implemented in plain Scala we have access to and utilize the full powers of the type system. 
 
-The base classes in Foam are \texttt{NFA}, \texttt{State}, and \texttt{Token}. From these three classes programmers can extend their functionality with any implementation information they need. All features are applied to the \texttt{NFA} class. This class has a single public facing function \texttt{addTransition((State, Token), State)}.
+Internally, Foam represents finite state machines as a set of states (of type \texttt{State}, a set of input tokens (of type \texttt{Token}), and a map of transitions (state-token tuples to states). End users can extend the \texttt{State} and \texttt{Token} classes with any implementation information they desire. Concretely, we capture the finite state machine model in the \texttt{NFA} class. All features are applied to the \texttt{NFA} class. This class has a single public facing function \texttt{addTransition((State, Token), State)}.
 
 We provide an \texttt{Aspect} class that contains all the mechanisms to create aspects. Any number of pointcuts and advice can be defined within a single aspect. Since this is a plain Scala class, aspects can also call other aspects and be nested at the programmer's discretion for code reuse.
 
-\paragraph{Pointcuts} Just as in AspectJ, we have decoupled the creation of pointcuts from the implementation of advice. The \texttt{Pointcutter} object allows programmers to collect join-points by matching on their defined criteria. Pointcuts in our system are simply sets of \texttt{State} or \texttt{Token} objects. The \texttt{Pointcutter} automatically casts the objects to subtypes via type parameterization. Figure \ref{lst:PrintFunds} shows the construction of a \texttt{Token} pointcut on lines 4-7.
+\paragraph{Pointcuts} Just as in AspectJ, we have decoupled the creation of pointcuts from the implementation of advice. The \texttt{Pointcutter} object allows programmers to collect join-points by matching on defined criteria. Pointcuts in our system are simply sets of \texttt{State} or \texttt{Token} objects. The \texttt{Pointcutter} automatically casts the objects to subtypes via type parameterization. Figure~\ref{lst:PrintFunds} shows the construction of a \texttt{Token} pointcut on lines 4-7.
 
-\paragraph{Advice} Foam has before, after, and around advice that comes in both state and token flavors. Advice is implemented by passing an anonymous function to the advice object. Following the formalism in Section \ref{sec:formal}, the implementation must return a path through the finite state machine. Note, in our implmentation we have chosen to only allow paths of lenght two. However, longer paths are possible with changes to the library. Since this is just a simple Scala function, any other legal Scala code may be used in the implementation. 
+\paragraph{Advice} Foam has before, after, and around advice that comes in both state and token flavors. Advice is implemented by passing an anonymous function to an advice object. Following the formalism in Section \ref{sec:formal}, the implementation must return a path through the finite state machine. Note, in our implementation we have chosen to only allow paths of length two. However, longer paths are possible with changes to the library. Since this is just a simple Scala function, any other legal Scala code may be used in the implementation. 
 
 Again, following the formalism from Section \ref{sec:formal}, the advice implementation is executed for each path that the join-point might be involved in. To make this easy for the user, we take a cue from AspectJ and provide reflective access to the join-point through the \texttt{thisJoinpoint} parameter. \texttt{thisJoinpoint.point} gives direct access to the object the join-point represents. \texttt{thisJoinpoint.in} represents the currently executed path into the join-point. \texttt{thisJoinpoint.out} represents the currently executed path out of the join-point. Lines 9-15 demonstrate how this is all used together to implement advice for the \textbf{Print Funds} feature.
 
@@ -468,16 +507,14 @@ We've decomposed the game of Nim as follows:
     \item Win Type: whether the game is mis\`{e}re play or normal play. 
 \end{itemize}
 
-% TODO: create the dependency chart
 \begin{figure}[h]
     \centering
-    % \includegraphics{figures/VendingMachine.pdf}
+    \includegraphics{figures/NimFeatures.pdf}
     \caption{Dependencies between Nim features.}
     \label{fig:nimDependencies}
 \end{figure}
 
 \subsubsection{Results}\label{sec:nim:results}
-\pnote{Which pieces of data should I capture? Should I be looking to re-create the same table as Justin made for the vending machine?}\jnote{I think that would be good for now. I don't really think that dumping it to an FPGA really makes sense here. Maybe we can talk about how many lines of GraphVis each type of Nim creates?}
 
 \subsection{SIMD Cache Coherence}\label{sec:cache}
 
