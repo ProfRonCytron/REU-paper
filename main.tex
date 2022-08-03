@@ -386,7 +386,7 @@ The dependencies of these features is shown in Figure~\ref{fig:nimDependencies}.
     \label{fig:nimDependencies}
 \end{figure}
 
-We consider a basic two-player (Figure~\ref{fig:nimPlayerFSM}) game using a single, subtractive heap of 5 tokens (Figure~\ref{fig:nimHeapFSM}\pnote{make [0] accepting}).
+We consider a basic two-player (Figure~\ref{fig:nimPlayerFSM}) game using a single, subtractive heap of 5 tokens (Figure~\ref{fig:nimHeapFSM}).
 A winner can be declared when:
 \begin{itemize}
     \item In Figure~\ref{fig:nimPlayerFSM}, the players truly alternate.  For example, the sequence ABA can lead to an accept, but the sequence AAB cannot.
@@ -591,7 +591,8 @@ Heaps &Players &States &Tokens &Transitions \\\midrule
 \begin{figure}[!htp]
 \small
 \begin{tabular}{cccrrrrr}\toprule
-\multicolumn{3}{c}{Allowed Moves} &Players &States &Tokens &Transitions \\\cmidrule{1-7}
+\multicolumn{3}{c}{Allowed} & & & & \\
+\multicolumn{3}{c}{Moves} &Players &States &Tokens &Transitions \\\cmidrule{1-7}
 -1 &-2 &-3 & & & & \\\midrule
 \checkmark & & &1 &24 &3 &72 \\
 \checkmark & & &2 &24 &4 &96 \\
@@ -606,24 +607,6 @@ Heaps &Players &States &Tokens &Transitions \\\midrule
 \end{tabular}
 \caption{Number of generated states, tokens, and transitions for the Subtraction game. Every game is played with a single starting heap of 21 tokens and through Mis\`{e}re play. }\label{tab:21Nim}
 \end{figure}
-
-% \begin{table}[!htp]\centering
-% \scriptsize
-% \begin{tabular}{lrrrr}\toprule
-% Features &States &Tokens &Transitions \\\midrule
-% H=21,P=1,A=[1],M &24 &3 &72 \\
-% H=21,P=2,A=[1],M &24 &4 &96 \\
-% H=21,P=4,A=[1],M &24 &6 &144 \\
-% H=21,P=1,A=[1,2],M &24 &4 &96 \\
-% H=21,P=2,A=[1,2],M &45 &6 &270 \\
-% H=21,P=4,A=[1,2],M &81 &10 &810 \\
-% H=21,P=1,A=[1,2,3],M &24 &5 &120 \\
-% H=21,P=2,A=[1,2,3],M &45 &8 &360 \\
-% H=21,P=4,A=[1,2,3],M &83 &14 &1162 \\
-% \bottomrule
-% \end{tabular}
-% \caption{Number of generated states, tokens, and transitions depending on selected features for 21. The features are as follows: H = Add Heap, P = Players, A = legal quantities of tokens to add for 21, and M = Mis\`{e}re play. }\label{tab:21Nim }
-% \end{table}
 
 \begin{figure}[!htp]
 \small
@@ -644,39 +627,6 @@ Heaps &Players &States &Tokens &Transitions \\\midrule
 \caption{Number of generated states, tokens, and transitions by selected features for traditional Nim. Each game was played as Mis\`{e}re play.}\label{tab:traditionalNim}
 \end{figure}
 
-% \begin{table}[!htp]\centering
-% \scriptsize
-% \begin{tabular}{lrrrr}\toprule
-% Features &States &Tokens &Transitions \\\midrule
-% None &1 &1 &1 \\
-% T &1 &1 &4 \\
-% P=1,2,4 &2 &2 &4 \\
-% H=3,[3,4],[3,4,5] &1 &1 &1 \\
-% H=3,T &1 &1 &1 \\
-% H=3,P=1,T &5 &5 &25 \\
-% H=[3,4],P=1,T &21 &9 &189 \\
-% H=[3,4,5],P=1,T &121 &14 &1694 \\
-% H=3,P=2,T &7 &7 &49 \\
-% H=[3,4],P=2,T &37 &16 &592 \\
-% H=[3,4,5],P=2,T &233 &26 &6058 \\
-% H=3,P=4,T &8 &8 &64 \\
-% H=[3,4],P=4,T &56 &30 &1680 \\
-% H=[3,4,5],P=4,T &415 &50 &20750 \\
-% H=3,P=1,T,M &6 &5 &30 \\
-% H=3,P=2,T,M &9 &7 &63 \\
-% H=3,P=4,T,M &11 &8 &88 \\
-% H=[3,4],P=1,T,M &22 &9 &198 \\
-% H=[3,4],P=2,T,M &39 &16 &624 \\
-% H=[3,4],P=4,T,M &60 &30 &1800 \\
-% H=[3,4,5],P=1,T,M &112 &14 &1708 \\
-% H=[3,4,5],P=2,T,M &235 &26 &6110 \\
-% H=[3,4,5],P=4,T,M &419 &50 &20950 \\
-% \bottomrule
-% \end{tabular}
-% \caption{Number of generated states, tokens, and transitions depending on selected features for traditional Nim. The features are as follows: H = Add Heap, P = Players, T = traditional Nim, and M = Mis\`{e}re play. }\label{tab:traditionalNim }
-% \end{table}
-
-
 \begin{figure}
     \centering
     \includegraphics[width=0.7\linewidth]{figures/nimexample/heapFSM.pdf}
@@ -686,14 +636,14 @@ Heaps &Players &States &Tokens &Transitions \\\midrule
 
 \begin{figure}
     \centering
-    \includegraphics[width=0.7\linewidth]{figures/nimexample/playerFSM.pdf}
+    \includegraphics[width=0.35\linewidth]{figures/nimexample/playerFSM.pdf}
     \caption{The Player finite state machine.}
     \label{fig:nimPlayerFSM}
 \end{figure}
 
 \begin{figure}
     \centering
-    \includegraphics[width=0.35\linewidth]{figures/nimexample/nimFSM.pdf}
+    \includegraphics[width=0.6\linewidth]{figures/nimexample/nimFSM.pdf}
     \caption{The resulting Nim finite state machine.}
     \label{fig:nimFSM}
 \end{figure}
