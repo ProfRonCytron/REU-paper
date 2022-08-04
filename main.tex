@@ -96,6 +96,7 @@
 \usepackage{booktabs, multirow} % for borders and merged ranges
 \usepackage{soul}% for underlines
 \usepackage{comment}
+\usepackage{wrapfig}
 \include{jdeters}
 
 
@@ -200,7 +201,7 @@
 \begin{abstract}
 We investigate the generation of complex, featureful finite-state machines from relatively simpler ones using two constructs.  The first, inspired by aspect-oriented programming, applies incremental changes to the states and edges of a finite-state machine to alter and customize its behavior in response to features of interest.   This allows efficient specification and generation of a large number of designs, each containing only those features of interest for a particular application.
 
-The second construct couples the behavior of multiple finite machines into a single machine that processes its inputs simultaneously.  While this is formally the concatenation of regular languages, we present a \emph{cross-product} algorithm that allows the resulting design to process its wider inputs in lock-step.  This is necessary for the proper timing of actions taken by the resulting machine. 
+The second construct couples the behavior of multiple finite machines into a single machine that processes its inputs simultaneously.  While this is formally the concatenation of regular languages, \jnote{I thought this wasn't concatenation?} we present a \emph{cross-product} algorithm that allows the resulting design to process its wider inputs in lock-step.  This is necessary for the proper timing of actions taken by the resulting machine. 
 
 Each construct is illustrated and results are presented using a simple example:  a vending machine and the game of Nim, respectively.  We then apply the constructs in concert to generate a coherent, $n$-way multiprocessor cache from a much simpler specification.
 
@@ -246,13 +247,13 @@ We show that our approach can generate designs that are exponentially large in t
 
 The advent of hardware-generation languages~\cite{chisel:article} has promoted the adoption of techniques and abstractions by hardware designers that were previously available only to software systems and their designers. Hardware-characterization languages such as VHDL~\cite{vhdl} and Verilog~\cite{verilog} describe the components and interconnections of hardware circuit elements, much like HTML describes the components and references of a web page. While those languages provide some abstractions (such as arithmetic operations and restrictive macros), the paradigms and practices used widely in successful software engineering efforts are largely unavailable.
 
-By contrast, hardware-generation approaches allow a designer to write a program whose execution generates the hardware design. The program can be authored using para\-digms that promote efficiency, reuse, rigorous testing, and clarity of expression. Our work in this paper builds on the hardware-generation language Chisel~\cite{chisel:book}, which is in turn built on Scala~\cite{scala-overview-tech-report}. Chisel is essentially a Scala library that generates Verilog when a Chisel program is executed.
+By contrast, hardware-generation approaches allow a designer to write a program whose execution generates the hardware design. The program can be authored using para\-digms that promote efficiency, reuse, rigorous testing, and clarity of expression. Our work in this paper builds on the hardware-generation language Chisel~\cite{chisel:book}, which is in turn built on Scala~\cite{scala-overview-tech-report}. Chisel is a Scala-embedded domain specific language and libraries that generate Verilog when a Chisel program is executed.
 
 A simple and recent example showing the advantages of hardware generation over characterization concerns an adder~\cite{Deters:adder}. Using VHDL, a hardware designer can request that an adder circuit be optimized for either for delay (carry lookahead) or for area (carry propagate). Using Chisel, an adder can be specified that combines both forms of carry computation, to meet a timing or area constraint while otherwise optimized in the other dimension.
 
 Chisel has also proven itself robust in pedagogy and industry, serving as the basis for courses in digital logic~\cite{vlsicourse} and serving as a platform for describing RISC-V systems~\cite{chisel:riscv}.  Our long-term goal is to develop a feature-oriented characterization of RISC-V~\cite{riscv}.  Here we focus on a specific, more modest construct used in hardware designs.
 
-In this paper, we consider a feature-oriented approach to generating hardware, specifically \emph{finite state machines} (FSMs). A given feature can affect multiple regions of an FSM. For example, the cache system  we consider in Section~\ref{sec:cache} could use write-back or write-through in response to a store operation. Expressed as a feature, write-back affects both the store operation (marking the line dirty) and the fetch operation (causing dirty lines to be written to the backing store on eviction). Aspect-oriented programming (AOP)~\cite{gregor:97} is a paradigm well suited to expression of cross-cutting concerns that affect multiple regions of software systems. For example, AspectJ~\cite{aspectj} allows expression of advice that is applied at prescribed join points of a software system written in Java. While our thinking is aspectual in terms of formulating a feature-oriented approach to finite state machines, we are fortunate that hardware generation languages such as Chisel suffice to express the requisite transformations:  no new language is needed.
+In this paper, we consider a feature-oriented approach to generating hardware, specifically \emph{finite state machines} (FSMs). A given feature can affect multiple regions of an FSM. For example, the cache system  we consider in Section~\ref{sec:cache} could use write-back or write-through in response to a store operation. Expressed as a feature, write-back affects both the store operation (marking the line dirty) and the fetch operation (causing dirty lines to be written to the backing store on eviction). Aspect-oriented programming (AOP)~\cite{gregor:97} is a paradigm well suited to expression of cross-cutting concerns that affect multiple regions of software systems. For example, AspectJ~\cite{aspectj} allows expression of advice that is applied at prescribed join points of a software system written in Java. While our thinking is aspectual in terms of formulating a feature-oriented approach to finite state machines, we are fortunate that hardware generation languages such as Chisel suffice to express the requisite transformations and code generation:  no new language is needed.
 
 In Section~\ref{sec:prior} we summarize feature-oriented approaches for software systems and other inspirations for our work. As compared with monolithic designs, feature-oriented systems omit unnecessary code, resulting in smaller footprint and higher throughput.
 Sections~\ref{sec:decomp} and~\ref{sec:formal} describe a feature-oriented approach for generating finite state machines using two complementary techniques. We illustrate those techniques separately on the examples of a vending machine (Section~\ref{sec:vend}) and the game of Nim (Section~\ref{sec:nim}). In Section~\ref{sec:cache}, the techniques are then applied in concert to generate a multiprocessor cache with a simple coherence protocol.
@@ -276,7 +277,8 @@ Macro processors can achieve the proper effect, namely including the code only w
 AOP is the perfect solution to this and similar problems, because a developer can specify that at \emph{every} method entry and exit (other than the method that does the logging), a segment of code should be inserted to accomplish the appropriate logging.  If the logging is no longer desired, the associated aspect is simply omitted when building the system.  In this way, both originally and upon modification, all methods' entries and exits are properly logged.
 
 \subsection{Feature-oriented programming}\label{sec:priorfop}
-Feature-Oriented Programming~(FOP)~\cite{prehofer1997feature} builds on this idea by expressing features in an aspectual manner. A feature is essentially a recipe for rewriting a software system to implement the feature. The common example given for this paradigm is that of a \emph{cache}, say in a web browser.  Where the browser would normally issue a request to a web site on behalf of a given URL (which could take some time), the cache feature would first check if the browser had recently fetched that URL, satisfying the request with the cached information. Implementation of this feature requires storage to hold previously fetched information, code to manage that storage, and a rewrite of the base system to cause the cache to be consulted prior to issuing the web request. Expressed aspectually, a cache could be imposed throughout the browser, in any situation where such a web request could be made. \jnote{Do we have anything that could introduce the cross-product features?}
+\jnote{Since this conference is asking specifically for FOP, do we need this much background detail? Would it be better to focus on other hardware construction?}
+Feature-Oriented Programming~(FOP)~\cite{prehofer1997feature} builds on this idea by expressing features in an aspectual manner. A feature is essentially a recipe for rewriting a software system to implement the feature. The common example given for this paradigm is that of a \emph{cache}, say in a web browser.  Where the browser would normally issue a request to a web site on behalf of a given URL (which could take some time), the cache feature would first check if the browser had recently fetched that URL, satisfying the request with the cached information. Implementation of this feature requires storage to hold previously fetched information, code to manage that storage, and a rewrite of the base system to cause the cache to be consulted prior to issuing the web request. Expressed aspectually, a cache could be imposed throughout the browser, in any situation where such a web request could be made.
 
 The feature on its own is insufficient to realize any benefits. The software system must be written in such a way to accept the feature. As more features are conceived and implemented, the base system and any extant features may require revision. In the end, a system is obtained where orthogonal features compose effortlessly, in any combination, to realize a desired subset of all possible features.
 
@@ -319,7 +321,9 @@ While beyond the scope of this paper, we aim to use \emph{timed automata}~\cite{
 
 We next illustrate our two mechanisms for generating designs.  The first uses aspect-oriented advice to incorporate features selectively into an FSM.  The second builds an FSM from the synchronous execution of smaller FSMs.
 
+\begin{comment}
 \rnote{rewrite or omit?} A \emph{feature} in our system is a collection of states, transitions, or a combination of both, that can be selectively added to a finite state machine. Features can be decomposed into cross-cutting concerns, independent finite state machines, or a combination of the both. To demonstrate feature decomposition, we model a vending machine and the game of Nim using finite state machines.
+\end{comment}
 
 \subsection{Automating feature inclusion: vending machine}\label{sec:vend}
 
@@ -340,22 +344,18 @@ For this example and the results we present, the features of interest are as fol
 \end{description}
 The dependencies of these features are shown in Figure~\ref{fig:vmDependencies}, but this graph is not needed for construction:  the advice for a given feature is applicable only when its associated \emph{joinpoints} exist in the FSM.  As is typical with aspect-oriented approaches, all advice is presented to the weaver (our runtime library for Chisel), and the aspects are continually applied until no changes occur.
 
-For example, the advice for Add Currency of coinage $k$ specifies that for any state representing that $n$ cents have been inserted, a state representing $n+k$ cents must exist, with a transition from state~$n$ to state~$n+k$ based on the insertion of coinage $k$.   This advice fails to terminate if not capped by some upper bound on funds, which could be related to the most expensive product sold.
+For example, the advice for Add Currency of coinage $k$ specifies that for any state representing that $n$ cents have been inserted, a state representing $n+k$ cents must exist, with a transition from state~$n$ to state~$n+k$ based on the insertion of coinage $k$.   This advice fails to terminate if not capped by some upper bound on funds, which could be related to the most expensive product sold. Figure \ref{fig:vend1} shows one such machine. Applying a 5 cent feature up to 15 cents and a 10 cent gum figure correctly generates all the necessary states. 
 
 As another example, consider the Buy More feature which causes the machine to retain funds after a purchase and allow for subsequent purchases.  Without this feature, the machine would return excess funds after a single purchase.  The advice for this feature modifies every purchase to move to a state representing currently held funds.
 
 A monolithic approach requires designers to specify all states and transitions for each feature subset, which is tedious and error-prone. With our approach, all states and transitions are obtained generatively and are correct by construction, if the advice for their creation is correct.
 
-% It must accept different types of currency and be prepared to dispense many types of products if there are sufficient funds. We can model the internal state of a vending machine as a finite state machine. Consider the situation where a government issues a new denomination of currency. In order to change the finite state machine to recognize this new denomination, every part of the machine that store the accumulated funds must be modified. That is, this new feature \emph{crosscuts} the entire finite state machine.
-
 \begin{figure*}
     \centering
-    \includegraphics[width=\textwidth]{figures/vend1.pdf}
-    \caption{Caption}
-    \label{fig:label}
+    \includegraphics[width=0.7\textwidth]{figures/vend1.pdf}
+    \caption{An example finite state machine that accepts 5 cent coins and dispenses 10 cent gum.}
+    \label{fig:vend1}
 \end{figure*}
-
-% Following prior work, we have adopted an aspect-oriented approach to decomposing crosscutting features. Translated into the world of finite state machines, an aspect may introduce a feature by inserting states and transitions before, after, or around other states and transitions. Below we have listed crosscutting features one might find. Figure~\ref{fig:vmDependencies} shows the dependencies between all the features in the vending machine.
 
 \begin{figure}
     \centering
@@ -375,7 +375,7 @@ Following is the our decomposition of Nim:
     \item[Heap Bounds] encodes the initial and winning number of tokens for each heap.
     \item[Legal Moves] encodes permissible combinations of adding and removing tokens from each heap.
     \item[Number of Players] specifies how many players alternate play in the game.
-    \item[Win Type] specifies whether the game is mis\`{e}re play or normal play. 
+    \item[Win Type] specifies whether the game is mis\`{e}re play or normal play.
 \end{description}
 The dependencies of these features is shown in Figure~\ref{fig:nimDependencies}.  
 
@@ -392,11 +392,32 @@ A winner can be declared when:
     \item In Figure~\ref{fig:nimPlayerFSM}, the players truly alternate.  For example, the sequence ABA can lead to an accept, but the sequence AAB cannot.
     \item In Figure~\ref{fig:nimHeapFSM}, an accepting sequence is 212.
 \end{itemize}
-Formally, we seek the \emph{concatenation} of the languages of these two machines.  If realized as such, then the sequence ABA212 would lead to an accept. While this correctly represents the sequence of inputs that causes somebody to win, the timing of actions associated with transitions in the two machines does not coincide properly.  For example, it is not possible in the concatenation to determine \emph{who} won the game when the second machine accepts.
+Formally, in the theory of regular languages, we seek the \emph{concatenation} of the languages of these two machines.   Given the sequence ABA and 212, each accepted by its respective machine, the concatenation ABA212 is a string in the concatenation of the two languages.  While this correctly represents the sequence of inputs that causes somebody to win, the timing of actions associated with transitions in the two machines does not coincide properly.  For example, it is not possible in the concatenation to determine \emph{who} won the game when the second machine accepts. 
 
-We prefer to process the inputs as (A,2), (B,1), and (A,2), so that the player making the move and the number of subtracted tokens are processed in lock step.  In this way, any actions associated with each move will be properly taken upon that move.  Similarly, if the game had 3 heaps in play instead of a single heap, we want all heaps to be modified by each turn.  Concatenation focus on one heap until it is exhausted before moving to the next heap.  \pnote{focuses or focus?}  Finally, consider that the first machine accepts~ABAB which would be inappropriate if the second machine accepts~212, since only~3 moves are made.  The lock-step execution we require is over inputs for each machine that are the same length.
+\begin{figure}
+    \centering
+    \includegraphics[width=0.55\linewidth]{figures/nimexample/heapFSM.pdf}
+    \caption{The Heap finite state machine.}
+    \label{fig:nimHeapFSM} 
+\end{figure}
+
+We prefer to process the inputs as (A,2), (B,1), and (A,2), so that the player making the move and the number of subtracted tokens are processed in lock step.  In this way, any actions associated with each move will be properly taken upon that move.  Similarly, if the game had 3~heaps in play instead of a single heap, we want all heaps to be modified by each turn.  Concatenation focuses on one heap until it is exhausted before moving to the next heap.   Finally, consider that the first machine accepts~ABAB which would be inappropriate if the second machine accepts~212, since only~3 moves are made.  The lock-step execution we require is over inputs for each machine that are the same length. \jnote{The wording in these two paragraphs is confusing. Are we seeking the concatenation or not? IMO this should be rewritten to explain why concatenation isn't what we were looking for \textit{then} explain what you came up with and why it's better.}\rnote{I don't understand your objection, let's talk}
+
+\begin{figure}
+    \centering
+    \includegraphics[width=0.35\linewidth]{figures/nimexample/playerFSM.pdf}
+    \caption{The Player finite state machine.}
+    \label{fig:nimPlayerFSM}
+\end{figure}
 
 In support of the semantic actions occurring as they should, and requiring inputs of the same length, we present in Section~\ref{sec:cpalg} an algorithm for constructing a particular \emph{cross product} of two FSMs.  For our example here, the resulting FSM is shown in Figure~\ref{fig:nimFSM}.  The cross product of the two machines nicely distinguishes a win by~A from a win by~B, and clearly a move and its player are processed in lock step.
+
+\begin{figure}
+    \centering
+    \includegraphics[width=0.6\linewidth]{figures/nimexample/nimFSM.pdf}
+    \caption{The resulting Nim finite state machine.}
+    \label{fig:nimFSM}
+\end{figure}
 
 \section{Formalism}\label{sec:formal}
 We have developed formalisms to describe each of the feature decomposition techniques. Following from the classical definition of finite state machines $M = (Q, \Sigma, \delta, q_0, F)$, $Q$ is a set of states, $\Sigma$ is a set of input symbols, $\delta$ is the transition function, $q_0$ is the start state, and $F$ is the set of accepting states. \\
@@ -414,7 +435,7 @@ Any path through the FSM can be described as a sequence of alternating states an
 \paragraph{Pointcuts} Before applying advice, we must define where in the FSM the advice will be. We define both pointcuts for both states and input tokens. As such, a pointcut $\Pi$ is either $\Pi_Q = \{q : q \in Q, C(q) = \mathrm{true}\}$ or $\Pi_\Sigma = \{\sigma : \sigma \in \Sigma, C(\sigma) = \mathrm{true}\}$, where $C$ is some matching criteria such as type.
 
 \paragraph{Advice} In our formalism, advice $\Delta$ is a function that returns a valid path through the FSM. The set of possible paths is defined as \[\Psi = \{A\alpha: A \in Q, \alpha \in \Sigma\} \cup \{\beta B: \beta \in \Sigma, B \in Q\} \cup Q \cup \Sigma.
-\] So, $\Delta_Q: \Pi_Q \rightarrow \Psi$ and $\Delta_\Sigma: \Pi_\Sigma \rightarrow \Psi$.The pattern of the required path depends on where in the FSM the pointcut is making modifications. Since a state may have multiple paths go through it or an input token may be used in multiple paths, $\Delta$ is not parameterized with the join-point $p$, but also information about the path it is being applied to. Advice in our system is \emph{context aware}, meaning that $\Delta$ can return different paths depending upon the path under consideration. 
+\] So, $\Delta_Q: \Pi_Q \rightarrow \Psi$ and $\Delta_\Sigma: \Pi_\Sigma \rightarrow \Psi$.The pattern of the required path depends on where in the FSM the pointcut is making modifications. Since a state may have multiple paths go through it or an input token may be used in multiple paths, $\Delta$ is not only parameterized with the join-point $p$, but also information about the path it is being applied to. Advice in our system is \emph{context aware}, meaning that $\Delta$ can return different paths depending upon the path under consideration. 
 
 For simplicity, we introduce three sets of path information $\Theta, \Omega$, and $\Gamma$ defined as:
 \begin{align*}
@@ -434,13 +455,6 @@ $\forall p \in \Pi \ \forall A \alpha \in \Theta \ \forall \beta B \in \Omega \q
 
 \paragraph{Buy More} As an example, let's consider the \textbf{Buy More} feature. After each time the machine despenses a product (represented in the system as a \texttt{DispenseState}) the machine should transition back to a state where the total value in the machine represents product price subtracted from the original value in the machine (represented as a \texttt{TotalState}).
 
-\begin{figure*}
-    \centering
-    \includegraphics[width=\textwidth]{figures/vend2.pdf}
-    \caption{Caption}
-    \label{fig:my_label}
-\end{figure*}
-
 \begin{align*}
 C: Q &\rightarrow \{\mathrm{true},\mathrm{false}\}\\
 q &\mapsto q.\text{type} = \text{DispenseState} \\
@@ -449,7 +463,14 @@ q &\mapsto q.\text{type} = \text{DispenseState} \\
 (q, \psi) &\rightarrow \lambda[\text{TotalState(funds)}] \\
 \text{where funds} &= q.\text{product.value} - q.\text{value}
 \end{align*}
-This $\Delta_Q$ is applied using the after method.
+This $\Delta_Q$ is applied using the after method. Figure \ref{fig:vend2} shows the application of this feature on the vending machine FSM from Figure \ref{fig:vend1}. Note, the \texttt{DispenseState} has been split by another feature used in the construction of \textbf{Buy More} to preserve value information and construct the correct path.
+
+\begin{figure*}
+    \centering
+    \includegraphics[width=0.7\textwidth]{figures/vend2.pdf}
+    \caption{The resulting FSM of the application of Buy More to the FSM from Figure \ref{fig:vend1}.}
+    \label{fig:vend2}
+\end{figure*}
 
 \subsubsection{Transition Features}
 Similarly we can express the three types of advice application for input tokens in terms of $\Pi, \Delta$, and $\Gamma$.\\
@@ -470,16 +491,17 @@ C: \Sigma &\rightarrow \{\mathrm{true},\mathrm{false}\}\\
 \end{cases}\\
 \text{where newState} &= \text{PrinterState}(\psi.B.\text{value})
 \end{align*}
-This $\Delta_\Sigma$ is applied using the after method.
+This $\Delta_\Sigma$ is applied using the after method. As above, Figure \ref{fig:vend3} shows the resulting FSM after the application of the \textbf{Print Funds} feature. This is a kin to the logging example from Section \ref{sec:prior}.
 
 \begin{figure*}
     \centering
-    \includegraphics[width=\textwidth]{figures/vend3.pdf}
-    \caption{Caption}
-    \label{fig:my_label}
+    \includegraphics[width=0.8\textwidth]{figures/vend3.pdf}
+    \caption{The resulting FSM of the application of Print Funds to the FSM from Figure \ref{fig:vend3}.}
+    \label{fig:vend3}
 \end{figure*}
 
 \subsection{Cross Product Features}\label{sec:cpalg}
+\todo{This section}
 \pnote{Do we provide motivation here? E.g., how this is different from the union/intersection machine constructs, and how this is fundamentally different from the concatenation machine?}
 \pnote{Where should we reference Sipser's proof of regular languages being closed under union?}
 
@@ -497,22 +519,12 @@ Let $M_1 = (Q_1, \Sigma_1, \delta_1, q_{01}, F_1)$ and $M_2 = (Q_2, \Sigma_2, \d
     \emptyset & \mathrm{else}
 \end{cases}\]
 
-\rnote{I am not sure this section is necessary.  We can point to github for the code.}
-\section{Foam: Aspect Oriented Finite State Machine Library}
-We have implemented an aspect oriented finite state machine library, which we call Foam,  in Scala\footnote{https://github.com/wustl-frisc/foam}. In this section we detail the programmer interface as well as how the library generates usable source code. Following our vending machine example, Figure~\ref{lst:PrintFunds} shows the implementation of the \textbf{Print Funds} feature in Foam.
+\section{Aspect Oriented Finite State Machine Library}
+We have implemented an aspect oriented finite state machine library, which we call Foam,  in Scala\footnote{https://github.com/wustl-frisc/foam}. In this section we detail the library as well as code generation.
 
-\subsection{Interface}
-While Foam is not a fully fledged domain specific language, we have modeled the interface after the well established aspect-oriented extension to Java, AspectJ~\cite{}. The intention is to give aspect-oriented practitioners a familiar interface for interacting with the finite state machines. Since the library is implemented in plain Scala we have access to and utilize the full powers of the type system. 
+While Foam is not a fully fledged domain specific language, we have modeled the interface after the well established aspect-oriented extension to Java, AspectJ~\cite{}. The intention is to give aspect-oriented practitioners a familiar interface for interacting with the finite state machines. Since the library is implemented in plain Scala we have access to and utilize the full powers of the type system. Following our vending machine example, Figure~\ref{lst:PrintFunds} shows the implementation of the \textbf{Print Funds} feature in Foam.
 
-Internally, Foam represents finite state machines as a set of states (of type \texttt{State}, a set of input tokens (of type \texttt{Token}), and a map of transitions (state-token tuples to states). End users can extend the \texttt{State} and \texttt{Token} classes with any implementation information they desire. Concretely, we capture the finite state machine model in the \texttt{NFA} class. All features are applied to the \texttt{NFA} class. This class has a single public facing function \texttt{addTransition((State, Token), State)}.
-
-We provide an \texttt{Aspect} class that contains all the mechanisms to create aspects. Any number of pointcuts and advice can be defined within a single aspect. Since this is a plain Scala class, aspects can also call other aspects and be nested at the programmer's discretion for code reuse.
-
-\paragraph{Pointcuts} Just as in AspectJ, we have decoupled the creation of pointcuts from the implementation of advice. The \texttt{Pointcutter} object allows programmers to collect join-points by matching on defined criteria. Pointcuts in our system are simply sets of \texttt{State} or \texttt{Token} objects. The \texttt{Pointcutter} automatically casts the objects to subtypes via type parameterization. Figure~\ref{lst:PrintFunds} shows the construction of a \texttt{Token} pointcut on lines 4-7.
-
-\paragraph{Advice} Foam has before, after, and around advice that comes in both state and token flavors. Advice is implemented by passing an anonymous function to an advice object. Following the formalism in Section \ref{sec:formal}, the implementation must return a path through the finite state machine. Note, in our implementation we have chosen to only allow paths of length two. However, longer paths are possible with changes to the library. Since this is just a simple Scala function, any other legal Scala code may be used in the implementation. 
-
-Again, following the formalism from Section \ref{sec:formal}, the advice implementation is executed for each path that the join-point might be involved in. To make this easy for the user, we take a cue from AspectJ and provide reflective access to the join-point through the \texttt{thisJoinpoint} parameter. \texttt{thisJoinpoint.point} gives direct access to the object the join-point represents. \texttt{thisJoinpoint.in} represents the currently executed path into the join-point. \texttt{thisJoinpoint.out} represents the currently executed path out of the join-point. Lines 9-15 demonstrate how this is all used together to implement advice for the \textbf{Print Funds} feature.
+We provide a series of extendable base classes to represent finite state machines. The library takes care of building pointcuts, applying aspects, and performing the cross-product. We have even provided reflexive access, just like AspectJ to the join-point and its incoming and outgoing paths. Given this, in relatively few lines of code, programmers can create advice with ease.
 
 \begin{figure*}
     \centering
@@ -521,22 +533,20 @@ Again, following the formalism from Section \ref{sec:formal}, the advice impleme
     \label{lst:PrintFunds}
 \end{figure*}
 
-\paragraph{Feature Application} Foam applies features using the same methodology as a typical aspect compiler. Given a list of aspects, the provided \texttt{Weaver} class applies each aspect sequentially. After the list of aspects have been exhausted, the \texttt{Weaver} starts back at the beginning of the list and applies them all again. This process continues until the resulting NFA stops changing. 
-
 \subsection{Code Generation}
-The \texttt{Emitter} class currently supports emitting GraphVis and Verilog code. Code generation is decoupled from the creation of the finite state machines. All the emitter needs to do is interpret the finite state machine data structures. To generate GraphVis we utilize the Graphviz4S library~\cite{}. Verilog is generated by interfacing with the Chisel language. We take the finite state machine, translate it into Chisel strcutures, and then let the Chisel system handle the rest. Due to the decoupled nature of the code generation, it would be relatively easy for end users of Foam to implment their own emitters.
+The library currently supports emitting GraphVis and Verilog code. Code generation is decoupled from the creation of the finite state machines as the library generates code based off the internal data structures, not the Scala code itself. Code GraphVis and Verilog code are generated by Graphviz4S~\cite{} and Chisel respectively. 
 
 \section{Case Studies}
 Here we present three case studies to demonstrate the generative ability of our framework: a Vending Machine, the game of Nim, and SIMD cache coherence.
 
 \subsection{Vending Machine}
-We implemented all the features from Section \ref{sec:vend} in our library. The resulting FSMs were then emitted as Verilog. The resulting Verilog was then synthesized on a xc7a35tcpg236-1 FPGA using Vivado 2022.1. Below we report the number of generated states, tokens, transitions in the FSM, and the space in LUTs that the FSM took up in on the FPGA. \pnote{Should we directly reference the table that the data is stored in?}
+We implemented all the features from Section \ref{sec:vend} in our library. The resulting FSMs were then emitted as Verilog. The Verilog was then synthesized on a xc7a35tcpg236-1 FPGA using Vivado 2022.1. Below we report the number of generated states, tokens, transitions in the FSM, and the space in LUTs that the FSM took up in on the FPGA.\rnote{tokens is usually called size of the alphabet, let's talk}
 
 Figure \ref{fig:vmData} shows the results for different endpoints generated by our library. For our tests, we held the currency threshold at 100. Every machine contains 5, 10, 25 value coins and 4 products of value 25, 50, 75, and 100. This is captured by \textit{None}. In the first set of results, each feature is shown by itself. Even single features can greatly increase the components in the FSM. The \textbf{Buy More} feature (denoted B) by itself more than doubles the number of states and transitions. This impressive leverage is further exemplified when combining features. 
 
-In these cases the number of states increase by 2.5x in the simplest endpoint up to 4.6x in the most complex, and the transitions by 2.5x and 5x respectively. Recall this is in a relatively simple vending machine that can only accept up to 100 units of value. Simply doubling the amount of accepted value to 200 creates a machine with 284 states (10.5x increase over the base), 11 tokens, and 3113 transitions (16x increase over the base). The largest feature in terms of code is \textbf{Peanut Warning} which is implemented in just 39 lines.
+In these cases the number of states increase by 2.5x in the simplest endpoint up to 4.6x in the most complex, and the transitions by 2.5x and 5x respectively. Recall this is in a relatively simple vending machine that can only accept up to 100 units of value. Simply doubling the amount of accepted value to 200 creates a machine with 284 states (10.5x increase over the base), 11 tokens, and 3113 transitions (16x increase over the base). However, this is accomplished in our library with relatively few lines of code. The largest feature in terms of code is \textbf{Peanut Warning} which is implemented in just 39 lines. \jnote{Report the lines of code for each feature?}
 
-Despite the huge number of generated states and transitions, the resulting LUTs taken up by the FSM are linear. This is due to the fact that given the proper encoding of the states, hardware synthesis tools can linearize the generated circuit. However, the original specification of that circuit \textit{must be expressed in the exponential form first} for the synthesis tools to recognize it. With our framework, hardware designers are not limited to small finite state machines. \pnote{Do we want to say that hardware synthesis tools can linearize the generated circuit? To my understanding, hardware synthesis tools are able to encode the (exponential quantity of) states within a linear amount of space -- which is an encoding trick. My main two qualms are with the word "linearize'' and the direct object being "the generated circuit''}
+Despite the huge number of generated states and transitions, the resulting LUTs taken up by the FSM are linear. This is due to the fact that hardware synthesis tools can encode the states using a linear scheme. However, the original specification of that circuit \textit{must be expressed in the exponential form first} for the synthesis tools to recognize it. With our framework, hardware designers are not limited to small finite state machines.
 
 \begin{figure}
     \centering
@@ -562,53 +572,9 @@ PICWB &124 &11 &1353 &220 \\
 \paragraph{Traditional Nim}
 The classical game of Nim is a mis\`{e}re game of two players and a finite number of heaps. Each turn, the current player may only remove tokens from a single heap of their choosing, and must take between 1 and all the tokens remaining in that heap. 
 
-\paragraph{The 21 Game}
-The 21 game is a counting-up variation of Nim, played with a finite number of players and a single heap, which is upper bounded by 21 tokens. Players continue to play in a round-robin style and may add between one to three tokens to the heap each turn. The player who adds the 21\textsuperscript{st} token loses. 
+In the simplest variation of traditional Nim, with a single heap containing three tokens and only allowing one player, six states and five tokens were created, as seen in Figure~\ref{tab:traditionalNim}. However, the results quickly explode as the number of players increase, and predominately, as the number of heaps and their initial quantities of tokens increases. Allowing for three heaps, containing 3, 4, and 5 tokens respectively, and having two players -- a common example used to introduce Nim -- already contains 235 states, 26 tokens, and 6110 transitions. 
 
-\paragraph{Circle Nim}
-Circle Nim is a variation of Nim where the heaps are placed around a circle. Each turn, players are allowed to take tokens from between one and an upper-bounded quantity of consecutive heaps, taking between one and every token within each heap. This is often played as a mis\`{e}re game. 
-
-\subsubsection{Results}\label{sec:nim:results}
-
-\begin{figure}[!htp]
-\small
-\begin{tabular}{cccrrr}\toprule
-Heaps &Players &States &Tokens &Transitions \\\midrule
-3 &1 &10 &11 &110 \\
-3 &2 &15 &17 &255 \\
-3 &4 &17 &20 &340 \\
-6 &1 &66 &20 &1320 \\
-6 &2 &113 &38 &4294 \\
-6 &4 &150 &74 &11100 \\
-9 &1 &514 &29 &14906 \\
-9 &2 &951 &56 &53256 \\
-9 &4 &1429 &110 &157190 \\
-\bottomrule
-\end{tabular}
-\caption{Number of generated states, tokens, and transitions by variation of features for Circle Nim. Each heap contained one token, players could take between one to three consecutive tokens, and all games were played as Mis\`{e}re play. }\label{tab:circleNim}
-\end{figure}
-
-\begin{figure}[!htp]
-\small
-\begin{tabular}{cccrrrrr}\toprule
-\multicolumn{3}{c}{Allowed} & & & & \\
-\multicolumn{3}{c}{Moves} &Players &States &Tokens &Transitions \\\cmidrule{1-7}
--1 &-2 &-3 & & & & \\\midrule
-\checkmark & & &1 &24 &3 &72 \\
-\checkmark & & &2 &24 &4 &96 \\
-\checkmark & & &4 &24 &6 &144 \\
-\checkmark &\checkmark & &1 &24 &4 &96 \\
-\checkmark &\checkmark & &2 &45 &6 &270 \\
-\checkmark &\checkmark & &4 &81 &10 &810 \\
-\checkmark & \checkmark &\checkmark &1 &24 &5 &120 \\
-\checkmark & \checkmark &\checkmark &2 &45 &8 &360 \\
-\checkmark & \checkmark &\checkmark &4 &83 &14 &1162 \\
-\bottomrule
-\end{tabular}
-\caption{Number of generated states, tokens, and transitions for the Subtraction game. Every game is played with a single starting heap of 21 tokens and through Mis\`{e}re play. }\label{tab:21Nim}
-\end{figure}
-
-\begin{figure}[!htp]
+\begin{figure}
 \small
 \begin{tabular}{rrrrrrrr}\toprule
 \multicolumn{3}{c}{Heaps} &Players &States &Tokens &Transitions \\\cmidrule{1-7}
@@ -627,25 +593,48 @@ Heaps &Players &States &Tokens &Transitions \\\midrule
 \caption{Number of generated states, tokens, and transitions by selected features for traditional Nim. Each game was played as Mis\`{e}re play.}\label{tab:traditionalNim}
 \end{figure}
 
-\begin{figure}
-    \centering
-    \includegraphics[width=0.7\linewidth]{figures/nimexample/heapFSM.pdf}
-    \caption{The Heap finite state machine.}
-    \label{fig:nimHeapFSM}
-\end{figure}
+\paragraph{The Subtraction Game}
+The Subtraction game is a single heap variation of Nim, usually played by a small group of players. The players take turns in a round-robin style and remove between one and a pre-determined number of tokens. As the game is played as a Mis\`{e}re game, the player taking the final token loses. 
 
 \begin{figure}
-    \centering
-    \includegraphics[width=0.35\linewidth]{figures/nimexample/playerFSM.pdf}
-    \caption{The Player finite state machine.}
-    \label{fig:nimPlayerFSM}
+\small
+\begin{tabular}{cccrrrrr}\toprule
+\multicolumn{3}{c}{Allowed} & & & & \\
+\multicolumn{3}{c}{Moves} &Players &States &Tokens &Transitions \\\cmidrule{1-7}
+-1 &-2 &-3 & & & & \\\midrule
+\checkmark & & &1 &24 &3 &72 \\
+\checkmark & & &2 &24 &4 &96 \\
+\checkmark & & &4 &24 &6 &144 \\
+\checkmark &\checkmark & &1 &24 &4 &96 \\
+\checkmark &\checkmark & &2 &45 &6 &270 \\
+\checkmark &\checkmark & &4 &81 &10 &810 \\
+\checkmark & \checkmark &\checkmark &1 &24 &5 &120 \\
+\checkmark & \checkmark &\checkmark &2 &45 &8 &360 \\
+\checkmark & \checkmark &\checkmark &4 &83 &14 &1162 \\
+\bottomrule
+\end{tabular}
+\caption{Number of generated states, tokens, and transitions for the Subtraction game. Every game is played with a single starting heap of 21 tokens and through Mis\`{e}re play. }\label{tab:subtractionNim}
 \end{figure}
 
+\paragraph{Circle Nim}
+Circle Nim is a variation of Nim where the heaps are placed around a circle. Each turn, players are allowed to take tokens from between one and an upper-bounded quantity of consecutive heaps, taking between one and every token within each heap. This is often played as a mis\`{e}re game. 
+
 \begin{figure}
-    \centering
-    \includegraphics[width=0.6\linewidth]{figures/nimexample/nimFSM.pdf}
-    \caption{The resulting Nim finite state machine.}
-    \label{fig:nimFSM}
+\small
+\begin{tabular}{cccrrr}\toprule
+Heaps &Players &States &Tokens &Transitions \\\midrule
+3 &1 &10 &11 &110 \\
+3 &2 &15 &17 &255 \\
+3 &4 &17 &20 &340 \\
+6 &1 &66 &20 &1320 \\
+6 &2 &113 &38 &4294 \\
+6 &4 &150 &74 &11100 \\
+9 &1 &514 &29 &14906 \\
+9 &2 &951 &56 &53256 \\
+9 &4 &1429 &110 &157190 \\
+\bottomrule
+\end{tabular}
+\caption{Number of generated states, tokens, and transitions by variation of features for Circle Nim. Each heap contained one token, players could take between one to three consecutive tokens, and all games were played as Mis\`{e}re play. }\label{tab:circleNim}
 \end{figure}
 
 \subsection{SIMD Caches}\label{sec:cache}
@@ -670,6 +659,8 @@ Suppose that we wanted to recreate this cache system ourselves, but instead keep
 \end{figure}
 
 While hardware designers may not choose to have a single FSM govern all cache interactions in actuality, this technique is still extremely useful for modeling the interactions between the caches. Imagine that in the next iteration of the architecture, the ``Dual Compute Unit'' becomes a ``Quad Compute Unit''. Instead of having to start completely from scratch, hardware designers can simply instantiate two more caches into the system. Furthermore, instead of being locked into a single cache coherence protocol, the hardware designers may want to choose the MESI protocol~\cite{}, for their next iteration. With our approach, this protocol can just be applied instead of the MSI protocol. This requires zero direct refactoring on the FSM itself.
+
+\jnote{Talk about how we can show the original language accepted by the cache is a subset of the new language --> there's no surprises vis-a-vis cpu communication.}
 
 \section{Future Work}
 \jnote{Call back to Cache, explain how with a FO-cache we could model RDNA even closer... write through, 4-way, LRU policy}
