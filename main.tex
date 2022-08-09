@@ -273,6 +273,7 @@ In this paper, we consider a feature-oriented programing (FOP) approach to gener
 
 \section{Prior work and motivation}\label{sec:prior}
 
+We review here the concepts and prior work upon which our work is based.
 \subsection{Aspect-oriented programming}
 
 Our work builds on a programming paradigm available in the software community that efficiently supports the expression and application of \emph{cross-cutting} concerns in a software system.  Aspect-Oriented Programming~(AOP)~\cite{gregor:97} and its realization in systems such as AspectJ~\cite{aspectj} allow developers to express ideas in a software system that affect multiple components of that system in support of a common idea or feature. A commonly cited example is the implementation of a logging feature, so that every method when called and prior to returning logs those events to some output stream. Absent an AOP approach, a developer is faced with the following difficulties:
@@ -718,7 +719,7 @@ Suppose that we wanted to model a similar cache system ourselves, but instead of
 Imagine that in the next iteration of the architecture, the designers wanted to use hardware coherence between all the SIMD units in a DCU rather. Instead of having to start the model completely from scratch, hardware designers can simply instantiate two more caches into the system. Furthermore, instead of being locked into a single cache coherence protocol, the hardware designers may want to choose the MESI protocol~\cite{}, for their next iteration. With our approach, this protocol can just be applied instead of the MSI protocol. 
 
 \section{Future Work}
-In future work, we plan on creating a fully feature-oriented cache using our system. Hardware caches are ripe for feature-oriented design as they contain many orthogonal features. For example, if we wanted to build a cache even closer to the RDNA architecture, we would need to 
+In future work, we plan on creating a fully feature-oriented cache using our system. Hardware caches are ripe for feature-oriented design as they contain many orthogonal features. For example, if we wanted to build a cache even closer to the RDNA architecture, we would need to switch the 
 
 \jnote{Call back to Cache, explain how with a FO-cache we could model RDNA even closer... write through, 4-way, LRU policy}
 
