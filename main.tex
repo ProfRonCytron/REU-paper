@@ -49,16 +49,15 @@
 %% the commands and values with those provided to you when you
 %% complete the rights form.
 \setcopyright{acmcopyright}
-\copyrightyear{2018}
-\acmYear{2018}
-\acmDOI{XXXXXXX.XXXXXXX}
+\copyrightyear{2022}
+\acmYear{2022}
+\acmDOI{}
 
 %% These commands are for a PROCEEDINGS abstract or paper.
-\acmConference[Conference acronym 'XX]{Make sure to enter the correct
-  conference title from your rights confirmation emai}{June 03--05,
-  2018}{Woodstock, NY}
-\acmPrice{15.00}
-\acmISBN{978-1-4503-XXXX-X/18/06}
+\acmConference[GPCE '22]{21st International Conference on Generative Programming}{December 05--07,
+  2022}{Auckland, NZ}
+\acmPrice{}
+\acmISBN{}
 
 
 %%
@@ -266,8 +265,12 @@ In this paper, we consider a feature-oriented programing (FOP) approach to gener
     \item In Section~\ref{sec:vend}, we describe an approach to formulating features in FSMs based on aspect-oriented programming (AOP).  We apply this idea to a featureful vending machine in Section~\ref{sec:ccut} and present results on the automatically generated FSMs with specific featuere sets in Section~\ref{sec:vendresults}.
     \item In Section~\ref{sec:nim} we introduce a generative approach to composing larger FSMs from smaller, behavior-specific machines, illustrated using the game of Nim.  The algorithm to achieve this \emph{cross-product} composition is presented in Section~\ref{sec:cpalg}, and results from its application to variations of Nim are shown in Section~\ref{sec:nimresults}.
     \item We combine both of the above ideas in Section~\ref{sec:cache} to the generation of an SIMD cache, one that has been proposed by~AMD.  The parallelism of the cache is generated via the cross-product technique and a coherence scheme is imposed as a feature using the AOP technique.
-    \item Our results confirm that our approach offers significant leverage toward generating large, complex FSMs from relatively smaller and simpler ones.
-    \item The code we have developed for this work integrates with Chisel and is available via \texttt{github}\cite{anon}.
+    \item Our results confirm that our approach offers significant leverage toward generating large, complex FSMs from relatively smaller and simpler ones.  Those larger machines are
+    \begin{itemize}
+        \item correct by construction if the constituent machines and aspectual advice are correct, and
+        \item subject to analyses of regular languages, about which much is decidable. 
+    \end{itemize}
+    \item The code we have developed for this work integrates with Chisel and is available via \texttt{github}~\cite{anon}.
 \end{itemize}
 
 
@@ -286,22 +289,19 @@ Our work builds on a programming paradigm available in the software community th
         \item Subsequent modifications to the system must be mindful to include properly the logging actions.
     \end{itemize}
 \end{itemize}
-Macro processors can achieve the proper effect, namely including the code only when it is desired.  However, it is still incumbent on developers to remember to call the macros at the proper points in a program.
+%Macro processors can achieve the proper effect, namely including the code only when it is desired.  However, it is still incumbent on developers to remember to call the macros at the proper points in a program.
+AOP is a great solution to this and similar problems, because a developer can specify that at \emph{every} method entry and exit (other than the method that does the logging), a segment of code should be inserted to accomplish the appropriate logging.  If the logging is no longer desired, the associated aspect is simply omitted when building the system.  In this way, both originally and upon modification, all methods' entries and exits are properly logged.
 
-AOP is the perfect solution to this and similar problems, because a developer can specify that at \emph{every} method entry and exit (other than the method that does the logging), a segment of code should be inserted to accomplish the appropriate logging.  If the logging is no longer desired, the associated aspect is simply omitted when building the system.  In this way, both originally and upon modification, all methods' entries and exits are properly logged.
+Aspects have been applied to finite-state machines for sequence diagrams in a modeling (UML) setting~\cite{aspectsUML}.  Our use of aspects extends that work by taking advantage of types in Scala to formulate advice and guide FSM modifications. 
 
-\subsection{Feature-oriented programming}\label{sec:priorfop}
-\jnote{Since this conference is asking specifically for FOP, do we need this much background detail? Would it be better to focus on other hardware construction?}
-Feature-Oriented Programming~(FOP)~\cite{prehofer1997feature} builds on this idea by expressing features in an aspectual manner. A feature is essentially a recipe for rewriting a software system to implement the feature. The common example given for this paradigm is that of a \emph{cache}, say in a web browser.  Where the browser would normally issue a request to a website on behalf of a given URL (which could take some time), the cache feature would first check if the browser had recently fetched that URL, satisfying the request with the cached information. Implementation of this feature requires storage to hold previously fetched information, code to manage that storage, and a rewrite of the base system to cause the cache to be consulted prior to issuing the web request. Expressed aspectually, a cache could be imposed throughout the browser, in any situation where such a web request could be made.
+\subsection{Benefits of feature-oriented programming}\label{sec:benefop}
 
-The feature on its own is insufficient to realize any benefits. The software system must be written in such a way to accept the feature. As more features are conceived and implemented, the base system and any extant features may require revision. In the end, a system is obtained where orthogonal features compose effortlessly, in any combination, to realize a desired subset of all possible features.
+Our work concerns the generation of FSMs that incorporate desirable subsets of features.  We show that FSMs can be specified much more efficiently using this approach.  Moreover, the FSMs ultimately generated by the Chisel toolchain contain only those features of interest, requiring fewer resources than would a full-featured, monolithic specification that disables undesirable features.
 
-This approach to creating featureful systems has the empirical advantages described below. This approach has also been attractive for managing product lines in which features evolve over time, affecting not only the base system but also other features~\cite{10.1145/2897695.2897701}.
+This approach has also been attractive for managing product lines in which features evolve over time, affecting not only the base system but also other features~\cite{10.1145/2897695.2897701}. 
 
-An example that has been treated with this approach is the CORBA~\cite{CORBA:00} Event Channel~\cite{CORBAService:02a}. The standard implementation is \emph{monolithic}, offering all possible features in all allowable combinations.    
-When expressed in terms of composable features, configurations of interest could be generated that contained only those desired features (and their dependencies).
+An example of the benefits obtainable from an FOP approach to a featureful system concerns the CORBA~\cite{CORBA:00} Event Channel~\cite{CORBAService:02a}. The standard implementation is \emph{monolithic}, offering all possible features in all allowable combinations.  A decomposition of the Event Channel in terms of its features has demonstrated that useful subsets of those features use far fewer resources when formulated compositionally~\cite{mdeters}.   
 
-\rnote{Ron talks about the efficiency results. if room, we can provide a graph.  must be anonymous}
 
 In this paper, we consider applying a feature-oriented approach to specifying hardware designs, namely finite-state machines.
 The resulting designs enjoy the same benefits as the software systems we describe above:
@@ -442,7 +442,6 @@ The formalisms presented here are implemented in Chisel as a library we call Foa
 \subsection{Cross-cutting features}\label{sec:ccut}
 We follow~\cite{aspectsUML} in the treatment of aspects for FSMs.  Essentially a state is like a method and a transition between states is like a method call.  The usual forms of before, after, and around advice are available (\textit{cf}. AspectJ~\cite{AspectJ:01}).   A cross-cutting feature is implemented using advice that modifies an FSMs behavior before, after or during a transition between states.
 
-% A path through an FSM can be described as a sequence of alternating states and input tokens. The FSM in Figure~\ref{fig:example} contains two paths from the start to accept state: $XxYyZ$ and $XtZ$. 
 As described below, a feature is comprised of \emph{advice} applied to \emph{pointcuts} of an FSM, which can formally change the language of the machine, but more broadly the advice can affect actions taken by the machine as its input is processed.  
 
 \begin{figure}
@@ -452,7 +451,7 @@ As described below, a feature is comprised of \emph{advice} applied to \emph{poi
     \label{fig:applyadvice}
 \end{figure}
 
-\paragraph{Pointcuts} These specify \emph{where} advice should be applied in a targeted FSM.   The generative nature of Chisel removes the need for new syntax to express pointcuts.  Instead, we can select states, transitions, or symbols using simple set quantifiers and predicates, written in Chisel/Scala and executed along with the rest of Chisel code that generates a circuit.  For example, a peanut-allergy warning can be generated in a vending-machine FSM through \emph{before} advice applied to any node that would vend a product containing peanuts.  Such properties are implemented nicely in Scala using \emph{traits}.  To implement this feature, the base code likely requires refactoring to include the peanuts trait.  However, the effort is worthwhile because the refactoring and associated advice make the resulting product both clearer and more easily able to exclude or include actions taken on vending products with peanuts.
+\paragraph{Pointcuts} These specify \emph{where} advice should be applied in a targeted FSM.   The generative nature of Chisel removes the need for new syntax to express pointcuts.  Instead, we can select states or symbols using simple set quantifiers and predicates, written in Chisel/Scala and executed along with the rest of Chisel code that generates a circuit.  For example, a peanut-allergy warning can be generated in a vending-machine FSM through \emph{before} advice applied to any node that would vend a product containing peanuts.  Such properties are implemented nicely in Scala using \emph{traits}.  To implement this feature, the base code likely requires refactoring to include the peanuts trait.  However, the effort is worthwhile because the refactoring and associated advice make the resulting product both clearer and more easily able to exclude or include actions taken on vending products with peanuts.
 
 In AOP terminology, a pointcut yields a set of \emph{joinpoints} at which advice is applied.  A joinpoint associated with the above example would be a single state~$Z$ at which a peanut product is vended.  Because this is a \emph{before} pointcut, the joinpoint has context that includes the state~$X$ prior to $Z$ and the action $t$ that causes the transition, as shown in Figure~\ref{fig:applyadvice}.  The result of applying the relevant advice is shown also, if $X$ made a transition on $x$ to $Z$.   The state $Y$ is now introduced to warn of peanuts, and confirmation to proceed is now represented by transition $y$ to $Z$. \rnote{change the figure and letters to make this more meaningful!} 
 
@@ -719,9 +718,9 @@ Suppose that we wanted to model a similar cache system ourselves, but instead of
 Imagine that in the next iteration of the architecture, the designers wanted to use hardware coherence between all the SIMD units in a DCU rather. Instead of having to start the model completely from scratch, hardware designers can simply instantiate two more caches into the system. Furthermore, instead of being locked into a single cache coherence protocol, the hardware designers may want to choose the MESI protocol~\cite{}, for their next iteration. With our approach, this protocol can just be applied instead of the MSI protocol. 
 
 \section{Future Work}
-In future work, we plan on creating a fully feature-oriented cache using our system. Hardware caches are ripe for feature-oriented design as they contain many orthogonal features. For example, if we wanted to build a cache even closer to the RDNA architecture, we would need to switch the 
+In future work, we plan on creating a fully feature-oriented cache using our system. Hardware caches are ripe for feature-oriented design as they contain many orthogonal features. For example, if we wanted to build a cache model even closer to the RDNA architecture, the original cache FSM would need to be write-through, 4-way set associative, and utilize an LRU replacement policy. Instead of forcing hardware designers into choosing an initial design and refactoring, write policy, allocation policy, replacement policy, and associativity could all be selectable features of the microarchitecture.
 
-\jnote{Call back to Cache, explain how with a FO-cache we could model RDNA even closer... write through, 4-way, LRU policy}
+Beyond just the cache, it is easy to extend this concept of feature-oriented hardware design to the chip as a whole. Hennessy and Patterson's original motivation behind the RISC-V architecture was to create an open and \textit{modular} instruction set. RISC-V is used in small application specific processors such as the controllers for Western Digital storage products~\cite{} and Google's Titan M2 security chip~\cite{}; all the way up to high performance application processors such at the SiFive P650~\cite{}. Instead of independently implementing each of these endpoints of RISC-V and the microarchitecture, we posit that featureful implementation of RISC-V would be far more useful. In this world, hardware designers could swap in and customize each of the ISA and microarchitectural features they need. This could open up a marketplace for hardware feature exchange. This is something that the software community has enjoyed for over a half century.
 
 %%
 %% The next two lines define the bibliography style to be used, and
