@@ -252,18 +252,24 @@ We show that our approach can generate designs that are exponentially large in t
 
 \section{Introduction}
 
-The advent of hardware-generation languages~\cite{chisel:article} has promoted the adoption of techniques and abstractions by hardware designers that were previously available only to software systems and their designers. Hardware-characterization languages such as VHDL~\cite{vhdl} and Verilog~\cite{verilog} describe the components and interconnections of hardware circuit elements, much like HTML describes the components and references of a web page. While those languages provide some abstractions (such as arithmetic operations and restrictive macros), the paradigms and practices used widely in successful software engineering efforts are largely unavailable.
+The advent of hardware-generation languages like Chisel~\cite{chisel:article} has promoted the adoption of techniques and abstractions by hardware designers that were previously available only to software systems and their designers. As HTML describes the components, structure, and connections of a web page, so do hardware-characterization languages such as VHDL~\cite{vhdl} and Verilog~\cite{verilog} describe the components and interconnections of hardware circuit elements. While those languages provide some abstractions (such as arithmetic operations and restrictive macros), the paradigms and practices used widely in successful software engineering efforts are largely unavailable.
 
-By contrast, hardware-generation approaches allow a designer to write a program whose execution generates the hardware design. The program can be authored using para\-digms that promote efficiency, reuse, rigorous testing, and clarity of expression. Our work in this paper builds on the hardware-generation language Chisel~\cite{chisel:book}, which is in turn built on Scala~\cite{scala-overview-tech-report}. Chisel is a Scala-embedded domain specific language and libraries that generate Verilog when a Chisel program is executed.
+By contrast, hardware-generation languages allow a designer to write a program whose \emph{execution} generates the hardware design. The program can be authored using para\-digms that promote efficiency, reuse, rigorous testing, and clarity of expression. Our work builds on the hardware-generation language Chisel~\cite{chisel:book}, which is in turn built on Scala~\cite{scala-overview-tech-report}. Chisel is a Scala-embedded domain specific language with libraries that generate Verilog when a Chisel program is executed.
 
-A simple and recent example showing the advantages of hardware generation over characterization concerns an adder~\cite{Deters:adder}. Using VHDL, a hardware designer can request that an adder circuit be optimized for either for delay (carry lookahead) or for area (carry propagate). Using Chisel, an adder can be specified that combines both forms of carry computation, to meet a timing or area constraint while otherwise optimized in the other dimension.
+% A recent example showing the advantages of hardware generation over characterization concerns an adder~\cite{Deters:adder}. Using VHDL, a hardware designer can request that an adder circuit be optimized for either for delay (carry lookahead) or for area (carry propagate). Using hardware generation, an adder can be specified that combines \emph{both} forms of carry computation, to meet a timing or area constraint, while otherwise optimizing for the other resource.
 
-Chisel has also proven itself robust in pedagogy and industry, serving as the basis for courses in digital logic~\cite{vlsicourse} and serving as a platform for describing RISC-V systems~\cite{chisel:riscv}.  Our long-term goal is to develop a feature-oriented characterization of RISC-V~\cite{riscv}.  Here we focus on a specific, more modest construct used in hardware designs.
+Chisel has proven itself robust in pedagogy and industry, serving as the basis for courses in digital logic~\cite{vlsicourse} and serving as a platform for describing full-featured RISC-V systems~\cite{chisel:riscv}.  
+%Our long-term goal is to develop a feature-oriented characterization of RISC-V~\cite{riscv}.  Here we focus on a specific, more modest construct used in hardware designs.
 
-In this paper, we consider a feature-oriented approach to generating hardware, specifically \emph{finite state machines} (FSMs). A given feature can affect multiple regions of an FSM. For example, the cache system  we consider in Section~\ref{sec:cache} could use write-back or write-through in response to a store operation. Expressed as a feature, write-back affects both the store operation (marking the line dirty) and the fetch operation (causing dirty lines to be written to the backing store on eviction). Aspect-oriented programming (AOP)~\cite{gregor:97} is a paradigm well suited to expression of cross-cutting concerns that affect multiple regions of software systems. For example, AspectJ~\cite{aspectj} allows expression of advice that is applied at prescribed join points of a software system written in Java. While our thinking is aspectual in terms of formulating a feature-oriented approach to finite state machines, we are fortunate that hardware generation languages such as Chisel suffice to express the requisite transformations and code generation:  no new language is needed.
+In this paper, we consider a feature-oriented programing (FOP) approach to generating hardware, specifically \emph{finite-state machines} (FSMs).   Our contributions are as follows:
+\begin{itemize}
+    \item In Section~\ref{sec:vend}, we describe an approach to formulating features in FSMs based on aspect-oriented programming (AOP).  We apply this idea to a featureful vending machine in Section~\ref{sec:ccut} and present results on the automatically generated FSMs with specific featuere sets in Section~\ref{sec:vendresults}.
+    \item In Section~\ref{sec:nim} we introduce a generative approach to composing larger FSMs from smaller, behavior-specific machines, illustrated using the game of Nim.  The algorithm to achieve this \emph{cross-product} composition is presented in Section~\ref{sec:cpalg}, and results from its application to variations of Nim are shown in Section~\ref{sec:nimresults}.
+    \item We combine both of the above ideas in Section~\ref{sec:cache} to the generation of an SIMD cache, one that has been proposed by~AMD.  The parallelism of the cache is generated via the cross-product technique and a coherence scheme is imposed as a feature using the AOP technique.
+    \item Our results confirm that our approach offers significant leverage toward generating large, complex FSMs from relatively smaller and simpler ones.
+    \item The code we have developed for this work integrates with Chisel and is available via \texttt{github}\cite{anon}.
+\end{itemize}
 
-In Section~\ref{sec:prior} we summarize feature-oriented approaches for software systems and other inspirations for our work. As compared with monolithic designs, feature-oriented systems omit unnecessary code, resulting in smaller footprint and higher throughput.
-Sections~\ref{sec:decomp} and~\ref{sec:formal} describe a feature-oriented approach for generating finite state machines using two complementary techniques. We illustrate those techniques separately on the examples of a vending machine (Section~\ref{sec:vend}) and the game of Nim (Section~\ref{sec:nim}). In Section~\ref{sec:cache}, the techniques are then applied in concert to generate a multiprocessor cache with a simple coherence protocol.
 
 \section{Prior work and motivation}\label{sec:prior}
 
@@ -332,7 +338,7 @@ We next illustrate our two mechanisms for generating designs.  The first uses as
 \rnote{rewrite or omit?} A \emph{feature} in our system is a collection of states, transitions, or a combination of both, that can be selectively added to a finite state machine. Features can be decomposed into cross-cutting concerns, independent finite state machines, or a combination of the both. To demonstrate feature decomposition, we model a vending machine and the game of Nim using finite state machines.
 \end{comment}
 
-\subsection{Automating feature inclusion: vending machine}\label{sec:vend}
+\subsection{Feature introduction via AOP}\label{sec:vend}
 
 As an example of a featureful design, we consider an FSM design for a vending machine.   A state in our design carries the necessary \emph{traits} to represent its role in the machine's operation:  the funds inserted and the potential products dispensed.  Our generative approach described below offers the following advantages over a monolithic design:
 \begin{itemize}
@@ -371,7 +377,7 @@ A monolithic approach requires designers to specify all states and transitions f
     \label{fig:vmDependencies}
 \end{figure}
 
-\subsection{Composing machines: Nim}
+\subsection{Generating FSMs via cross-product composition}\label{sec:nim}
 
 Nim~\cite{nim} is a broad class of impartial mathematical strategy games, which traditionally involve multiple heaps of tokens (\textit{e.g.}, sticks) and two or more alternating players. The current player removes an allowable number of tokens from a subset of the heaps. The winner can be the player taking the last token, or (in the \textit{mis\`{e}re} version) that player loses.
 
@@ -432,7 +438,7 @@ We have developed a formalism to describe both of the feature-decomposition tech
 
 The formalisms presented here are implemented in Chisel as a library we call Foam, described in Section~\ref{sec:foam}.  The examples and results presented in this paper were created using Foam.  
 
-\subsection{Cross-cutting features}
+\subsection{Cross-cutting features}\label{sec:ccut}
 We follow~\cite{aspectsUML} in the treatment of aspects for FSMs.  Essentially a state is like a method and a transition between states is like a method call.  The usual forms of before, after, and around advice are available (\textit{cf}. AspectJ~\cite{AspectJ:01}).   A cross-cutting feature is implemented using advice that modifies an FSMs behavior before, after or during a transition between states.
 
 % A path through an FSM can be described as a sequence of alternating states and input tokens. The FSM in Figure~\ref{fig:example} contains two paths from the start to accept state: $XxYyZ$ and $XtZ$. 
@@ -517,7 +523,7 @@ This $\Delta_\Sigma$ is applied using the after method. As above, Figure \ref{fi
     \label{fig:vend3}
 \end{figure*}
 
-\subsection{Cross Product Features}\label{sec:cpalg}
+\subsection{Cross-product features}\label{sec:cpalg}
 \todo{This section}
 \pnote{Do we provide motivation here? E.g., how this is different from the union/intersection machine constructs, and how this is fundamentally different from the concatenation machine?}
 \pnote{Where should we reference Sipser's proof of regular languages being closed under union?}
@@ -586,10 +592,10 @@ We provide a series of extendable base classes to represent finite state machine
 \subsection{Code Generation}
 The library currently supports emitting GraphVis and Verilog code. Code generation is decoupled from the creation of the finite state machines, as the library generates code based off the internal data structures, not the Scala code itself. Code GraphVis and Verilog code are generated by Graphviz4S~\cite{} and Chisel, respectively. 
 
-\section{Case Studies}
+\section{Case studies and results}\label{sec:results}
 Here we present three case studies to demonstrate the generative ability of our framework: a Vending Machine, the game of Nim, and SIMD cache coherence.
 
-\subsection{Vending Machine}
+\subsection{Vending Machine}\label{sec:vendresults}
 We implemented all the features from Section \ref{sec:vend} in our library. The resulting FSMs were then emitted as Verilog. The Verilog was then synthesized on a xc7a35tcpg236-1 FPGA using Vivado 2022.1. Below we report the number of generated states, transitions in the FSM, and the space in LUTs that the FSM took up in on the FPGA.
 
 Figure \ref{fig:vmData} shows the results for different endpoints generated by our library. For our tests, we held the currency threshold at 100. Every machine contains 5, 10, 25 value coins and 4 products of value 25, 50, 75, and 100. This is captured by \textit{None}. In the first set of results, each feature is shown by itself. Even single features can greatly increase the components in the FSM. The \textbf{Buy More} feature (denoted B) by itself more than doubles the number of states and transitions. This impressive leverage is further exemplified when combining features. 
@@ -618,7 +624,7 @@ PICWB &124 &1353 &220 \\
     \label{fig:vmData}
 \end{figure}
 
-\subsection{Nim}\label{sec:nim}
+\subsection{Nim}\label{sec:nimresults}
 \todo{Removed ``tokens'' from the data.}
 \paragraph{Traditional Nim}
 The classical game of Nim is a mis\`{e}re game of two players and a finite number of heaps. Each turn, the current player may only remove tokens from a single heap of their choosing, and must take between 1 and all the tokens remaining in that heap. 
@@ -691,9 +697,9 @@ Heaps &Players &States &Tokens &Transitions \\\midrule
 \subsection{SIMD Caches}\label{sec:cache}
 Ultimately, the goal of this work is to make the design of complex hardware easier through generation. Here, we will demonstrate how we can combine our techniques with ``off the shelf'' components to generate SIMD Caches that are coherent with each other. While we recognize that this is purely a pedagogical example, it is modeled off the real-world RDNA Architecture from AMD~\cite{}.
 
-\paragraph{RDNA Architecture} The RDNA architecture packages two SIMD execution units into a single unit called a \textit{work-group processors}. Each work-group shares L0 cache between each SIMD unit. This cache is kept coherent through serialization of the execution when conflicts are detected. Two work-groups are then packaged together into a \textit{Dual Compute Unit} (DCU). Currently, the two L0s within a DCU are kept coherent via software. At the beginning of each clock cycle, four separate instructions are issued to each of the SIMD units from the L0 instruction cache.
+The RDNA architecture packages two SIMD execution units into a single unit called a \textit{work-group processors}. Each work-group shares L0 cache between each SIMD unit. This cache is kept coherent through serialization of the execution when conflicts are detected. Two work-groups are then packaged together into a \textit{Dual Compute Unit} (DCU). Currently, the two L0s within a DCU are kept coherent via software. 
 
-Suppose that we wanted to recreate this cache system ourselves, but instead keep the L0s coherent using the MSI cache coherence protocol~\cite{}. To begin, we have selected the ready-made cache from RISC-V Mini~\cite{}. As-is, this cache, shown in Figure \ref{fig:cacheBefore}, is directly connected to main memory in a single core system and does not have any coherence protocol. Using a feature oriented approach, we can retrofit this cache with advice that implements the MSI protocol, shown in Figure \ref{fig:cacheAfter}. We can then instantiate and cross-product the number of cache FSMs we need to govern the whole process. 
+Suppose that we wanted to model a similar cache system ourselves, but instead of handling data conflicts between the two SIMD units in a work-group processor, we use the MSI cache coherence protocol~\cite{}. For this case study, we have selected the ready-made cache from RISC-V Mini~\cite{}. As-is, this cache, shown in Figure \ref{fig:cacheBefore}, is directly connected to main memory in a single core system and does not have any coherence protocol. Using a feature oriented approach, we can retrofit this cache with advice that implements the MSI protocol, shown in Figure \ref{fig:cacheAfter}. In order to model the interactions between the two now coherent caches, we can cross-product the two. This results in a FSM that has 27 states and 208 different transitions. Hardware designers could use this sort of modeling for correctness verification, however that is beyond the scope of this paper.
 
 \begin{figure}
     \centering
@@ -709,11 +715,11 @@ Suppose that we wanted to recreate this cache system ourselves, but instead keep
     \label{fig:cacheAfter}
 \end{figure}
 
-While hardware designers may not choose to have a single FSM govern all cache interactions in actuality, this technique is still extremely useful for modeling the interactions between the caches. Imagine that in the next iteration of the architecture, the ``Dual Compute Unit'' becomes a ``Quad Compute Unit''. Instead of having to start completely from scratch, hardware designers can simply instantiate two more caches into the system. Furthermore, instead of being locked into a single cache coherence protocol, the hardware designers may want to choose the MESI protocol~\cite{}, for their next iteration. With our approach, this protocol can just be applied instead of the MSI protocol. This requires zero direct refactoring on the FSM itself.
-
-\jnote{Talk about how we can show the original language accepted by the cache is a subset of the new language --> there's no surprises vis-a-vis cpu communication.}
+Imagine that in the next iteration of the architecture, the designers wanted to use hardware coherence between all the SIMD units in a DCU rather. Instead of having to start the model completely from scratch, hardware designers can simply instantiate two more caches into the system. Furthermore, instead of being locked into a single cache coherence protocol, the hardware designers may want to choose the MESI protocol~\cite{}, for their next iteration. With our approach, this protocol can just be applied instead of the MSI protocol. 
 
 \section{Future Work}
+In future work, we plan on creating a fully feature-oriented cache using our system. Hardware caches are ripe for feature-oriented design as they contain many orthogonal features. For example, if we wanted to build a cache even closer to the RDNA architecture, we would need to 
+
 \jnote{Call back to Cache, explain how with a FO-cache we could model RDNA even closer... write through, 4-way, LRU policy}
 
 %%
