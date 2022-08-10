@@ -320,13 +320,13 @@ Nim~\cite{enwiki:1102668015} is a broad class of impartial mathematical strategy
 
 While we initially approached this game with the ideas in Section~\ref{sec:vend}, states in this game represent the number of tokens present in each heap and the current player's turn.  Aspectual features should be additive, expanding the behavior of their targets, and while cross-cutting, they do not typically completely rewrite their targets.  With Nim, the machine is changed throughout by the addition of an additional player or heap.   
 
-However, we realized that construction of even the most basic game of Nim can be regarded as the composition or simultaneous operation of two simpler machines:   one that represents only the allowable subtractions of tokens in the heap and one that represents only the alternation of players.   By composing those and operating them in lock step, we can then generate an FSM that implements basic Nim.
+However, we realized that construction of even the most basic game of Nim can be regarded as the composition or simultaneous operation of two simpler machines:   one that represents only the allowable subtractions of tokens in a heap (such as the 5-token heap shown in Figure~\ref{fig:nimHeapFSM}) and one that represents only the alternation of players (such as the two-player alternation shown in Figure~\ref{fig:nimPlayerFSM}).  Transitions not shown in those machines are errors, such as Player~A taking two consecutive turns.   By a composition technique we present in Section~\ref{sec:cpalg}, we obtain the basic game of Nim shown in Figure~\ref{fig:nimFSM}.  That algorithm simulates the simultaneous, lock-step execution of the machines shown in Figures~\ref{fig:nimPlayerFSM} and~\ref{fig:nimHeapFSM}.
 
-Following is our decomposition of Nim:
+Following is our feature decomposition of Nim:
 \begin{description}
     \item[Heap Bounds] encodes the initial and winning number of tokens for each heap.
-    \item[Legal Moves] encodes permissible combinations of adding and removing tokens from each heap.
-    \item[Number of Players] specifies how many players alternate play in the game.
+    \item[Legal Moves] encodes permissible combinations of adding or removing tokens from each heap.
+    \item[Number of Players] specifies how many players take turns in the game.
     \item[Win Type] specifies whether the game is mis\`{e}re play or normal play.
 \end{description}
 The dependencies of these features is shown in Figure~\ref{fig:nimDependencies}.  
@@ -338,31 +338,31 @@ The dependencies of these features is shown in Figure~\ref{fig:nimDependencies}.
     \label{fig:nimDependencies}
 \end{figure}
 
-We consider a basic two-player (Figure~\ref{fig:nimPlayerFSM}) game using a single, subtractive heap of 5 tokens (Figure~\ref{fig:nimHeapFSM}).
-If we view th4 two FSMs operating in lock step for each game move, the game is won when:
+
+The game is won when:
 \begin{itemize}
-    \item the players alternate correctly, as in Figure~\ref{fig:nimPlayerFSM}.  For example, the sequence ABA leads to an accept, but the sequence AAB cannot.
-    \item all tokens have been taken, for example using the sequence 212 in Figure~\ref{fig:nimHeapFSM}.
+    \item Players alternate correctly, as in Figure~\ref{fig:nimPlayerFSM}.  For example, the sequence ABA leads to an accept, but the sequence AAB cannot.
+    \item All tokens have been taken, for example using the sequence 212 in Figure~\ref{fig:nimHeapFSM}.
 \end{itemize}
-Formally, in the theory of regular languages, we seek the \emph{concatenation} of the languages of these two machines.   Given the sequence ABA and 212, each accepted by its respective machine, the concatenation ABA212 is a string in the concatenation of the two languages.  While this correctly represents the sequence of inputs that causes somebody to win, the timing of actions associated with transitions in the two machines does not coincide properly.  For example, it is not possible in the concatenation to determine \emph{who} won the game when the second machine accepts. 
+Formally, in the theory of regular languages, acceptable inputs for our problem are in the \emph{concatenation} of the languages of these two machines.   Given the sequence ABA and 212, each accepted by its respective machine, the concatenation ABA212 is a string in the concatenation of the two languages.  While this correctly represents the sequence of inputs that causes somebody to win, the timing of actions associated with transitions in the two machines does not coincide properly.  For example, it is not possible in the concatenation to determine \emph{who} won the game when the second machine moves to its accepting states, where zero tokens remain. 
 
 \begin{figure}
     \centering
     \includegraphics[width=0.55\linewidth]{figures/nimexample/heapFSM.pdf}
-    \caption{The Heap finite state machine.}
+    \caption{FSM for a 5-token heap that allows one or two tokens to be removed in a turn.}
     \label{fig:nimHeapFSM} 
 \end{figure}
 
-We prefer to process the inputs more naturally as (A,2), (B,1), and (A,2), so that the player making the move and the number of subtracted tokens are processed in lock step.  In this way, any actions associated with each move will be properly taken upon that move.  Similarly, if the game had 3~heaps in play instead of a single heap, we want all heaps to be modified by each turn.  Concatenation focuses on one heap until it is exhausted before moving to the next heap.   Finally, consider that the first machine accepts~ABAB which would be inappropriate if the second machine accepts~212, since only~3 moves are made.  The lock-step execution we require is over inputs for each machine that are the same length.
+We prefer to process the inputs more naturally as (A,2), (B,1), and (A,2), so that the player making the move and the number of subtracted tokens are processed in lock step.  In this way, any actions associated with each move will be properly taken upon that move.  Similarly, if the game had 3~heaps in play instead of a single heap, we want all heaps to be appropriately modified by each turn.  Concatenation would focus on one heap until it is exhausted before moving to the next heap.   Finally, consider that the first machine accepts~ABAB which would be inappropriate if the second machine accepts~212, since only~3 moves are made.  The lock-step execution we require is over \emph{same-length} inputs for each machine.
 
 \begin{figure}
     \centering
     \includegraphics[width=0.35\linewidth]{figures/nimexample/playerFSM.pdf}
-    \caption{The Player finite state machine.}
+    \caption{FSM specifying alternation of Players~A and~B.}
     \label{fig:nimPlayerFSM}
 \end{figure}
 
-In support of the semantic actions occurring as they should, and requiring inputs of the same length, we present in Section~\ref{sec:cpalg} an algorithm for constructing a particular \emph{cross product} of two FSMs.  For our example here, the resulting FSM is shown in Figure~\ref{fig:nimFSM}.  This cross product of the Heap and Player machines nicely distinguishes a win by~A from a win by~B, and clearly a move and its player are processed in lock step.
+In support of the semantic actions occurring as they should, and requiring inputs of the same length, we present in Section~\ref{sec:cpalg} an algorithm for constructing a particular \emph{cross product} of two FSMs.  For our example here, the resulting FSM is shown in Figure~\ref{fig:nimFSM}, which makes moves with the proper timing and appropriately distinguishes a win by~A from a win by~B.
 
 In terms of leverage, consider the cross-product generation of an FSM from two identical FSMS each of size $m$ (states+transitions).  For example, we generate a 2-heap version of Nim by taking the cross product of two such FSMs, as described in Section~\ref{sec:cpalg}.  The resulting machine is of size $O(m^{2})$.  An $n$-way cross product generates a machine of size $O(m^{n})$, where $m$ is viewed as a constant here.  The structures we can generate with this approach are (in the limit) exponential in the size of their specifications.
 
@@ -500,7 +500,6 @@ PICWB &124 &1353 &220 \\
 \end{figure}
 
 \subsection{Nim}\label{sec:nimresults}
-\todo{Removed ``tokens'' from the data.}
 \paragraph{Traditional Nim}
 The classical game of Nim is a mis\`{e}re game of two players and a finite number of heaps. Each turn, the current player may only remove tokens from a single heap of their choosing, and must take between 1 and all the tokens remaining in that heap. 
 
@@ -508,21 +507,21 @@ In the simplest variation of traditional Nim, with a single heap containing thre
 
 \begin{figure}
 \small
-\begin{tabular}{rrrrrrrr}\toprule
-\multicolumn{3}{c}{Heaps} &Players &States &Tokens &Transitions \\\cmidrule{1-7}
-3 &4 &5 & & & & \\\midrule
-\checkmark & & &1 &6 &5 &30 \\
-\checkmark & & &2 &9 &7 &63 \\
-\checkmark & & &4 &11 &8 &88 \\
-\checkmark &\checkmark & &1 &22 &9 &198 \\
-\checkmark &\checkmark & &2 &39 &16 &624 \\
-\checkmark &\checkmark & &4 &60 &30 &1800 \\
-\checkmark & \checkmark &\checkmark &1 &112 &14 &1708 \\
-\checkmark & \checkmark &\checkmark &2 &235 &26 &6110 \\
-\checkmark & \checkmark &\checkmark &4 &419 &50 &20950 \\
+\begin{tabular}{rrrrrrr}\toprule
+\multicolumn{3}{c}{Heaps} &Players &States &Transitions \\\cmidrule{1-6}
+3 &4 &5 & & & \\\midrule
+\checkmark & & &1 &6 &30 \\
+\checkmark & & &2 &9 &63 \\
+\checkmark & & &4 &11 &88 \\
+\checkmark &\checkmark & &1 &22 &198 \\
+\checkmark &\checkmark & &2 &39 &624 \\
+\checkmark &\checkmark & &4 &60 &1800 \\
+\checkmark & \checkmark &\checkmark &1 &112 &1708 \\
+\checkmark & \checkmark &\checkmark &2 &235 &6110 \\
+\checkmark & \checkmark &\checkmark &4 &419 &20950 \\
 \bottomrule
 \end{tabular}
-\caption{Number of generated states, tokens, and transitions by selected features for traditional Nim. Each game was played as Mis\`{e}re play.}\label{tab:traditionalNim}
+\caption{Number of generated states and transitions by selected features for traditional Nim. Each game was played as Mis\`{e}re play.}\label{tab:traditionalNim}
 \end{figure}
 
 \paragraph{The Subtraction Game}
@@ -530,22 +529,22 @@ The Subtraction game is a single heap variation of Nim, usually played by a smal
 
 \begin{figure}
 \small
-\begin{tabular}{cccrrrrr}\toprule
+\begin{tabular}{cccrrrr}\toprule
 \multicolumn{3}{c}{Allowed} & & & & \\
-\multicolumn{3}{c}{Moves} &Players &States &Tokens &Transitions \\\cmidrule{1-7}
--1 &-2 &-3 & & & & \\\midrule
-\checkmark & & &1 &24 &3 &72 \\
-\checkmark & & &2 &24 &4 &96 \\
-\checkmark & & &4 &24 &6 &144 \\
-\checkmark &\checkmark & &1 &24 &4 &96 \\
-\checkmark &\checkmark & &2 &45 &6 &270 \\
-\checkmark &\checkmark & &4 &81 &10 &810 \\
-\checkmark & \checkmark &\checkmark &1 &24 &5 &120 \\
-\checkmark & \checkmark &\checkmark &2 &45 &8 &360 \\
-\checkmark & \checkmark &\checkmark &4 &83 &14 &1162 \\
+\multicolumn{3}{c}{Moves} &Players &States &Transitions \\\cmidrule{1-6}
+-1 &-2 &-3 & & & \\\midrule
+\checkmark & & &1 &24 &72 \\
+\checkmark & & &2 &24 &96 \\
+\checkmark & & &4 &24 &144 \\
+\checkmark &\checkmark & &1 &24 &96 \\
+\checkmark &\checkmark & &2 &45 &270 \\
+\checkmark &\checkmark & &4 &81 &810 \\
+\checkmark &\checkmark &\checkmark &1 &24 &120 \\
+\checkmark &\checkmark &\checkmark &2 &45 &360 \\
+\checkmark &\checkmark &\checkmark &4 &83 &1162 \\
 \bottomrule
 \end{tabular}
-\caption{Number of generated states, tokens, and transitions for the Subtraction game. Every game is played with a single starting heap of 21 tokens and through Mis\`{e}re play. }\label{tab:subtractionNim}
+\caption{Number of generated states and transitions for the Subtraction game. Every game is played with a single starting heap of 21 tokens and through Mis\`{e}re play. }\label{tab:subtractionNim}
 \end{figure}
 
 \paragraph{Circle Nim}
@@ -553,20 +552,20 @@ Circle Nim is a variation of Nim where the heaps are placed around a circle. Eac
 
 \begin{figure}
 \small
-\begin{tabular}{cccrrr}\toprule
-Heaps &Players &States &Tokens &Transitions \\\midrule
-3 &1 &10 &11 &110 \\
-3 &2 &15 &17 &255 \\
-3 &4 &17 &20 &340 \\
-6 &1 &66 &20 &1320 \\
-6 &2 &113 &38 &4294 \\
-6 &4 &150 &74 &11100 \\
-9 &1 &514 &29 &14906 \\
-9 &2 &951 &56 &53256 \\
-9 &4 &1429 &110 &157190 \\
+\begin{tabular}{cccrr}\toprule
+Heaps &Players &States &Transitions \\\midrule
+3 &1 &10 &110 \\
+3 &2 &15 &255 \\
+3 &4 &17 &340 \\
+6 &1 &66 &1320 \\
+6 &2 &113 &4294 \\
+6 &4 &150 &11100 \\
+9 &1 &514 &14906 \\
+9 &2 &951 &53256 \\
+9 &4 &1429 &157190 \\
 \bottomrule
 \end{tabular}
-\caption{Number of generated states, tokens, and transitions by variation of features for Circle Nim. Each heap contained one token, players could take between one and three consecutive tokens, and all games were played as Mis\`{e}re play. }\label{tab:circleNim}
+\caption{Number of generated states and transitions by variation of features for Circle Nim. Each heap contained one token, players could take between one and three consecutive tokens, and all games were played as Mis\`{e}re play. }\label{tab:circleNim}
 \end{figure}
 
 \subsection{SIMD Caches}\label{sec:cache}
@@ -595,7 +594,7 @@ Imagine that in the next iteration of the architecture, the designers wanted to 
 \section{Future Work}
 In future work, we plan on creating a fully feature-oriented cache using our system. Hardware caches are ripe for feature-oriented design as they contain many orthogonal features. For example, if we wanted to build a cache model even closer to the RDNA architecture, the original cache FSM would need to be write-through, 4-way set associative, and utilize an LRU replacement policy. Instead of forcing hardware designers into choosing an initial design and refactoring, write policy, allocation policy, replacement policy, and associativity could all be selectable features of the microarchitecture.
 
-Beyond just the cache, it is easy to extend this concept of feature-oriented hardware design to the chip as a whole. Hennessy and Patterson's original motivation behind the RISC-V architecture was to create an open and \textit{modular} instruction set. RISC-V is used in small application specific processors such as the controllers for Western Digital storage products~\cite{} and Google's Titan M2 security chip~\cite{}; all the way up to high performance application processors such at the SiFive P650~\cite{}. Instead of independently implementing each of these endpoints of RISC-V and the microarchitecture, we posit that featureful implementation of RISC-V would be far more useful. In this world, hardware designers could swap in and customize each of the ISA and microarchitectural features they need. This could open up a marketplace for hardware feature exchange. This is something that the software community has enjoyed for over a half century.
+Beyond just the cache, it is easy to extend this concept of feature-oriented hardware design to the chip as a whole. Hennessy and Patterson's original motivation behind the RISC-V architecture was to create an open and \textit{modular} instruction set. RISC-V is used in small application specific processors such as the controllers for Western Digital storage products~\cite{WD:22} and Google's Titan M2 security chip~\cite{kleidermacher:21}; all the way up to high performance application processors such at the SiFive P550~\cite{SiFive:22}. Instead of independently implementing each of these endpoints of RISC-V and the microarchitecture, we posit that featureful implementation of RISC-V would be far more useful. In this world, hardware designers could swap in and customize each of the ISA and microarchitectural features they need. This could open up a marketplace for hardware feature exchange. This is something that the software community has enjoyed for over a half century.
 
 %%
 %% The next two lines define the bibliography style to be used, and
