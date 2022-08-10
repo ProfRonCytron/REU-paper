@@ -35,7 +35,7 @@
 %%
 %%
 %% The first command in your LaTeX source must be the \documentclass command.
-\documentclass[sigplan,anonymous,review]{acmart}
+\documentclass[sigplan,anonymous, review]{acmart}
 
 %%
 %% \BibTeX command to typeset BibTeX logo in the docs
@@ -96,6 +96,7 @@
 \usepackage{soul}% for underlines
 \usepackage{comment}
 \usepackage{wrapfig}
+\usepackage{capt-of}
 \include{jdeters}
 
 
@@ -121,77 +122,24 @@
 %% Of note is the shared affiliation of the first two authors, and the
 %% "authornote" and "authornotemark" commands
 %% used to denote shared contribution to the research.
-\author{Ben Trovato}
-\authornote{Both authors contributed equally to this research.}
-\email{trovato@corporation.com}
-\orcid{1234-5678-9012}
-\author{G.K.M. Tobin}
-\authornotemark[1]
-\email{webmaster@marysville-ohio.com}
+\author{Justin Deters}
+\email{j.deters@wustl.edu}
+
+\author{Peyton Gozon}
+\email{peyton.gozon@wustl.edu}
+
+\author{Max Camp-Oberhauser}
+\email{c.max@wustl.edu}
+
+\author{Ron Cytron}
+\email{cytron@wustl.edu}
+
 \affiliation{%
-  \institution{Institute for Clarity in Documentation}
-  \streetaddress{P.O. Box 1212}
-  \city{Dublin}
-  \state{Ohio}
+  \institution{Washington University in St. Louis}
+  \city{St. Louis}
+  \state{Missouri}
   \country{USA}
-  \postcode{43017-6221}
 }
-
-\author{Lars Th{\o}rv{\"a}ld}
-\affiliation{%
-  \institution{The Th{\o}rv{\"a}ld Group}
-  \streetaddress{1 Th{\o}rv{\"a}ld Circle}
-  \city{Hekla}
-  \country{Iceland}}
-\email{larst@affiliation.org}
-
-\author{Valerie B\'eranger}
-\affiliation{%
-  \institution{Inria Paris-Rocquencourt}
-  \city{Rocquencourt}
-  \country{France}
-}
-
-\author{Aparna Patel}
-\affiliation{%
- \institution{Rajiv Gandhi University}
- \streetaddress{Rono-Hills}
- \city{Doimukh}
- \state{Arunachal Pradesh}
- \country{India}}
-
-\author{Huifen Chan}
-\affiliation{%
-  \institution{Tsinghua University}
-  \streetaddress{30 Shuangqing Rd}
-  \city{Haidian Qu}
-  \state{Beijing Shi}
-  \country{China}}
-
-\author{Charles Palmer}
-\affiliation{%
-  \institution{Palmer Research Laboratories}
-  \streetaddress{8600 Datapoint Drive}
-  \city{San Antonio}
-  \state{Texas}
-  \country{USA}
-  \postcode{78229}}
-\email{cpalmer@prl.com}
-
-\author{John Smith}
-\affiliation{%
-  \institution{The Th{\o}rv{\"a}ld Group}
-  \streetaddress{1 Th{\o}rv{\"a}ld Circle}
-  \city{Hekla}
-  \country{Iceland}}
-\email{jsmith@affiliation.org}
-
-\author{Julius P. Kumquat}
-\affiliation{%
-  \institution{The Kumquat Consortium}
-  \city{New York}
-  \country{USA}}
-\email{jpkumquat@consortium.net}
 
 %%
 %% By default, the full list of authors will be used in the page
@@ -199,7 +147,7 @@
 %% other information printed in the page headers. This command allows
 %% the author to define a more concise list
 %% of authors' names for this purpose.
-\renewcommand{\shortauthors}{Trovato et al.}
+\renewcommand{\shortauthors}{Deters et al.}
 
 %%
 %% The abstract is a short summary of the work to be presented in the
@@ -429,97 +377,71 @@ We follow~\cite{aspectsUML} in the treatment of aspects for FSMs.  Essentially a
 
 As described below, a feature is comprised of \emph{advice} applied to \emph{pointcuts} of an FSM, which can formally change the language of the machine, but more broadly the advice can affect actions taken by the machine as its input is processed.  
 
-\paragraph{Pointcuts} These specify \emph{where} advice should be applied in a targeted FSM.   The generative nature of Chisel removes the need for new syntax to express pointcuts.  Instead, we can select states or symbols using simple set quantifiers and predicates, written in Chisel/Scala and executed along with the rest of Chisel code that generates a circuit.  For example, printing of available funds can be generated in a vending-machine FSM through \emph{after} advice applied to any token that adds value to the machine.  Such properties are implemented nicely in Scala using \emph{traits}.  To implement this feature, the base code likely requires refactoring to include the value trait.  However, the effort is worthwhile because the refactoring and associated advice make the resulting product both clearer and more easily able to exclude or include actions taken at different inputs.
+\paragraph{Pointcuts} These specify \emph{where} advice should be applied in a targeted FSM.   The generative nature of Chisel removes the need for new syntax to express pointcuts.  Instead, we can select states or symbols using simple set quantifiers and predicates, written in Chisel/Scala and executed along with the rest of Chisel code that generates a circuit.  For example, the \textbf{Print Funds} feature can be generated in a vending-machine FSM through \emph{after} advice applied to any token that adds value to the machine.  Such properties are implemented nicely in Scala using \emph{traits}.  To implement this feature, the base code likely requires refactoring to include the value trait.  However, the effort is worthwhile because the refactoring and associated advice make the resulting product both clearer and more easily able to exclude or include actions taken at different inputs.
 
-In AOP terminology, a pointcut yields a set of \emph{joinpoints} at which advice is applied.  A joinpoint associated with the above example would be a single token~$5$ (such at the one between state 10 and 15) at which the value increase in the machine by 5 cents.  Because this is an \emph{after} pointcut, the joinpoint has context that includes the state~10 prior to token~5 and the following state~15, as shown in Figure~\ref{fig:vend1}. 
+In AOP terminology, a pointcut yields a set of \emph{joinpoints} at which advice is applied.  A joinpoint associated with the above example would be a single token~``5'', such at the one between state ``10'' and ``15'', at which the value increase in the machine by ``5'' cents.  Because this is an \emph{after} pointcut, the joinpoint has context that includes the state~``15'' that follows the token~``5'', as shown in Figure~\ref{fig:vend1}. 
 
 \begin{figure*}
     \centering
-    \includegraphics[width=0.8\textwidth]{figures/vend3.pdf}
+    \includegraphics[width=0.8\textwidth]{figures/vend2.pdf}
     \caption{The resulting FSM of the application of Print Funds to the FSM from Figure \ref{fig:vend1}.}
     \label{fig:applyadvice}
 \end{figure*}
 
-\paragraph{Advice} Following AOP terminology, advice specifies \emph{what} changes to the FSM will be applied at a joinpoint. Again, no new syntax is needed and advice executes along with any Scala/Chisel code. Advice modifies the FSM by inserting states or symbols before, after, and around pointcuts. In our printing of available funds example, advice modifies the FSM by inserting a new state. However, the advice generated state is dependent upon the context contained in the pointcut. In Figure \ref{fig:applyadvice}, each print statement is based upon each following state of the token 5. Furthermore, to prevent infinite application of features, advice may do nothing when applied to certain joinpoints. In the Figure \ref{fig:applyadvice} FSM, the advice must check if the state following the token~5 is already a printing state. If so, no advice is applied.
+\paragraph{Advice} This specifies \emph{what} changes to the FSM should be applied at a joinpoint. In the \textbf{Print Funds} feature, a new state is inserted following each token~``5'' in the FSM. The exact print statement generated by the advice is determined by the context contained within the joinpoint. For example, \texttt{Print \textcent15} because the state~``15'' follows the token~``5'' discussed earlier. Furthermore, to prevent infinite application of features, the advice for \textbf{Print Funds} checks to see if the context in the joinpoint is already a printing state. If so, no advice is applied.
+
+Like pointcuts, advice is written in Chisel/Scala. Not only can advice insert new states, but it can also insert new symbols as well. Take the \textbf{Print Funds} feature for example. The pointcut is predicated upon a dispense state having a ``peanut'' trait. Because this is a \emph{before} pointcut, each joinpoint has context that includes each path into the state. In Figure \ref{fig:applyadvice2} this is $10 \xrightarrow{Peanut}$ and $15 \xrightarrow{Peanut}$. The advice will insert a new ``Contains Nuts!''~state and ``Accept''~token for each of the joinpoints. It also inserts a new transition on the ``Reject''~token whose destiation is determined by the context contained in the joinpoint.
+
+\begin{figure*}
+    \centering
+    \includegraphics[width=0.8\textwidth]{figures/vend3.pdf}
+    \caption{The resulting FSM of the application of Peanut Warning to the FSM from Figure \ref{fig:vend1}.}
+    \label{fig:applyadvice2}
+\end{figure*}
 
 \subsection{Cross-product features}\label{sec:cpalg}
-\todo{This section}
-\pnote{Do we provide motivation here? E.g., how this is different from the union/intersection machine constructs, and how this is fundamentally different from the concatenation machine?}
-\pnote{Where should we reference Sipser's proof of regular languages being closed under union?}
+\pnote{Should this be Cross-product Features? OR should this be on the cross product machines?}
 
-\pnote{Should these be done as ordered pairs of states, like in a ''cross product" -- e.g., $(q_A, q_B)$? Or should these be done in the way Ron's done on the board, such as $q_Aq_B$?}
+Below we present the algorithm for producing the lock-step, cross-product finite state machine from two deterministic finite state automata. 
 
-\begin{algorithm}
-\caption{Construction of the Cross Product Machine}
-\begin{algorithmic}
+\begin{figure}[htb]
+\renewcommand{\algorithmicrequire}{\textbf{Inputs:}}
+\renewcommand{\algorithmicensure}{\textbf{Output:}}
+\renewcommand\thealgorithm{}
+\begin{algorithmic}[1]
 \REQUIRE {$A = (Q_A, \Sigma_A, \delta_A, q_A, F_A), B = (Q_B, \Sigma_B, \delta_B, q_B, F_B)$}
 \ENSURE {$C = (Q_C, \Sigma_C, \delta_C, q_C, F_C)$}
 
 \STATE{$q_C \gets (q_A, q_B)$}
-\STATE{$L \gets \{q_C\}$} \hfill\COMMENT{States to be processed.}
-\STATE{$P \gets \emptyset$} \hfill\COMMENT{Already-processed states.}
+\STATE{$Q_C \gets \{q_C\}$}
+\STATE{$L \gets \{q_C\}$} \hfill\COMMENT{Work queue}
+\STATE{$P \gets \emptyset$} \hfill\COMMENT{Already-processed states}
 \WHILE{$L \neq \emptyset$}
     \STATE{$s = (s_A, s_B) \gets \mathrm{dequeue}(L)$}
     \STATE{$P \gets P \cup \{s\}$}
-    \FOR{$(s_A \xrightarrow{a} t_A \in \delta_A) \times (s_B \xrightarrow{b} t_B \in \delta_B)$}
-        \STATE{$t \gets (t_A, t_B)$}
-        \IF{$t \not\in P$}
-            \STATE{$L \gets L \cup \{t\}$}
-            \STATE{$Q_C \gets Q_C \cup \{t\}$}
+    \FOR{$(s_A \xrightarrow{a} d_A \in \delta_A) \times (s_B \xrightarrow{b} d_B \in \delta_B)$}
+        \STATE{$d \gets (d_A, d_B)$}
+        \IF{$d \not\in P$}
+            \STATE{$L \gets L \cup \{d\}$}
+        \ENDIF
+        \STATE{$\delta_C(s, (a, b)) \gets d$} 
+        \IF{$d_A \in F_A \land d_B \in F_B$}
+            \STATE{$F_C \gets F_C \cup \{d\}$}
         \ENDIF
     \ENDFOR
 \ENDWHILE
 \end{algorithmic}
+\caption{Construction of the Cross Product FSM.  The inputs $A$ and $B$ must be deterministic;  the output $C$ is deterministic.}\label{fig:algo}
+\end{figure}
 
-\end{algorithm}
+This algorithm works as a breadth-first search of both machines, maintaining a work queue of combined-states that still need to be processed. Starting with the combined-state of the individual machines' starting states, the cartesian product of transitions is considered. Combined destination states are added to the work queue if they have not yet been processed. The algorithm then iteratively constructs the transition function by adding the transition $s \xrightarrow{(a,b)} d$, and constructs the concomitant set of states and alphabet. Each combined destination state is marked as an accepting state if both of the component destination states are accepting states. 
+
+Consider this algorithm applied to Figures~\ref{fig:nimPlayerFSM} and \ref{fig:nimHeapFSM}, with $L = \{(\text{Player A}, [5])\}$. In this case, $s = (\text {Player A}, [5])$; it is added to the already-processed states list $P$, and then we consider the Cartesian product of transitions from state $\text{Player A}$ in the player machine and from state $[5]$ in the heap machine. This gives us $\{\text{Player A} \xrightarrow{B} \text{Player B}\} \times \{[5] \xrightarrow{\text{Take } 1} [4], [5] \xrightarrow{\text{Take } 2} [3]\}$. First consider the pair of transitions $(\text{Player A} \xrightarrow{B} \text{Player B}, [5] \xrightarrow{\text{Take } 1} [4])$: the combined destination state is $(\text{Player B}, [4])$. As the combined destination state is not already in $P$, it is added to the work queue $L$. The transition $(\text {Player A}, [5]) \xrightarrow{(B, \text{Take } 1)} (\text{Player B}, [4])$ is added to the cross product machine's transition function, with the state $(\text{Player B}, [4])$ being added to $Q_C$ and $(B, \text{Take } 1)$ being added $\Sigma_C$. As $[4]$ is not an accepting state, their destination state is not added to $F_C$. Then, $(\text{Player A} \xrightarrow{B} \text{Player B}, [5] \xrightarrow{\text{Take } 2} [3])$ would be processed similarly. \pnote{Is it worth adding $X$ state would be added to $L$, $Y$ to $P$, etc?}
+
+% The algorithm begins by combining the two starting states and adding it to the work queue. It then proceeds by removing the first entry from the work queue, splitting it into its two component states, and iterates through all combinations of transitions from the component states within their respective machines. For each pair of transitions, their destination states are combined into a composite state, and is marked for later processing. Then, the cross product machine's transition function is augmented to include this transition, and the resulting state is marked as an accepting state if both component states are likewise accepting. 
 
 
-\begin{algorithm}
-\caption{Cross Product Machine}
 
-\begin{algorithmic}[1]
-\REQUIRE {$M_1 = (Q_1, \Sigma_1, \delta_1, q_{01}, F_1), M_2 = (Q_2, \Sigma_2, \delta_2, q_{02}, F_2)$}
-\ENSURE {$M = (Q, \Sigma, \delta, q_0, F)$}
-    \STATE {$q_0 \gets (q_{01}, q_{02})$}
-    \STATE {$Q \gets \{q_0\}$}
-    \STATE {$\Sigma \gets \emptyset$}
-    \STATE {$\forall q \in Q_1 \times Q_2, \forall a \in \Sigma_1 \times \Sigma_2, \delta(q, a) \gets \emptyset$}
-    \STATE {$\delta' \gets \delta$} \COMMENT{This is used to determine when to stop iterating.}
-    \REPEAT
-        \STATE{$\delta' \gets \delta$}
-        \FOR{$\mathbf{q} = (q_1, q_2) \in Q$}
-            \STATE{$\mathrm{M_1Trans} \gets \{ (a_1, r_1) : \forall a_1 \in \Sigma_1, \delta_1(q_1, a_1) = r_1 \}$}
-            \STATE{$\mathrm{M_2Trans} \gets \{ (a_2, r_2) : \forall a_2 \in \Sigma_2, \delta_2(q_2, a_2) = r_2 \}$}
-            
-            \FOR{$((a_1, r_1), (a_2, r_2)) \in \mathrm{M_1Trans} \times \mathrm{M_2Trans}$}
-                \STATE{$\mathbf{r} \gets (r_1, r_2)$} 
-                \STATE{$\mathbf{\sigma} \gets (a_1, a_2)$} 
-                \STATE{$Q \gets Q \cup \mathbf{r}$}
-                \STATE{$\Sigma \gets \Sigma \cup \mathbf{\sigma}$}
-                \STATE{$\delta(\mathbf{q}, \sigma) \gets \delta(\mathbf{q}, \sigma) \cup \mathbf{r}$}
-                
-                \IF{$r_1 \in F_1 \land r_2 \in F_2$}
-                    \STATE{$F \gets F \cup \mathbf{r}$}
-                \ENDIF
-            \ENDFOR
-        \ENDFOR
-    \UNTIL{$\delta = \delta'$}
-\end{algorithmic}
-\end{algorithm}
-
-Let $M_1 = (Q_1, \Sigma_1, \delta_1, q_{01}, F_1)$ and $M_2 = (Q_2, \Sigma_2, \delta_2, q_{02}, F_2)$ be finite state machines. Then we may construct the cross product machine, $M = M_1 \times M_2 = (Q, \Sigma, \delta, q_0, F)$ as: 
-
-\begin{enumerate}
-    \item $Q = Q_1 \times Q_2$
-    \item $\Sigma = \Sigma_1 \times \Sigma_2$
-    \item $q_0 = (q_{01}, q_{02})$
-    \item $F = (F_1 \times Q_2) \cap (Q_1 \times F_2)$
-    \item Define $\delta$ such that $\forall \mathbf{r} = (r_1, r_2) \in Q, \forall \mathbf{a} = (a_1, a_2) \in \Sigma,$ 
-\end{enumerate}
-\[\delta(\mathbf r, \mathbf a) = \begin{cases}
-    (\delta_1(r_1, a_1), \delta_2(r_2, a_2)) & \delta_i(r_i, a_i) \neq \emptyset, i = 1, 2\\
-    \emptyset & \mathrm{else}
-\end{cases}\]
 
 \section{Aspect Oriented Finite State Machine Library}\label{sec:foam}
 We have implemented an aspect oriented finite state machine library, which we call Foam,  in Scala\footnote{https://github.com/wustl-frisc/foam}. In this section, we detail the library as well as code generation.
@@ -531,7 +453,7 @@ We provide a series of extendable base classes to represent finite state machine
 \begin{figure*}
     \centering
     \input{listings/PrintFunds}
-    \caption{The implementation of the PrintFunds feature in Foam.}
+    \caption{The implementation of the Print Funds feature in Foam.}
     \label{lst:PrintFunds}
 \end{figure*}
 
