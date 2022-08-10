@@ -228,7 +228,7 @@ In this paper, we consider a feature-oriented programming (FOP) approach to gene
 We review here the concepts and prior work upon which our work is based.
 \subsection{Aspect-oriented programming}
 
-Our work builds on a programming paradigm available in the software community that efficiently supports the expression and application of \emph{cross-cutting} concerns in a software system.  Aspect-Oriented Programming~(AOP)~\cite{gregor:97} and its realization in systems such as AspectJ~\cite{aspectj} allow developers to express ideas that affect multiple components of a system in support of a common idea or feature. A commonly cited example is the implementation of a logging feature. Every method when called and prior to returning, logs those events to some output stream. Absent an AOP approach, a developer is faced with the following difficulties:
+Our work builds on a programming paradigm available in the software community that efficiently supports the expression and application of \emph{cross-cutting} concerns in a software system.  Aspect-Oriented Programming~(AOP)~\cite{gregor:97} and its realization in systems such as AspectJ~\cite{aspectj} allow developers to express ideas that affect multiple components of a system in support of a common idea or feature. A commonly cited example is the implementation of pervasive logging: every method, when called and prior to returning, should log those events to some output stream. Absent an AOP approach, a developer is faced with the following difficulties:
 \begin{itemize}
     \item Implementation of the feature requires modifying every method at its entry and every possible exit so that it issues the proper log messages.  
     
@@ -241,7 +241,7 @@ Our work builds on a programming paradigm available in the software community th
     \end{itemize}
 \end{itemize}
 %Macro processors can achieve the proper effect, namely including the code only when it is desired.  However, it is still incumbent on developers to remember to call the macros at the proper points in a program.
-AOP offers a great solution to this and similar problems, because a developer can specify via aspects that at \emph{every} method entry and exit (other than the method that does the logging), a segment of code should be inserted to accomplish the appropriate logging.  If the logging is no longer desired, the associated aspect is simply omitted when building the system.  In this way, both originally and upon modification, all methods' entries and exits are properly logged.
+AOP offers an efficient and clean solution to this and similar problems, because a developer can specify via aspects that at \emph{every} method entry and exit (other than the method that does the logging), a segment of code should be inserted to accomplish the appropriate logging.  If the logging is no longer desired, the associated aspect is simply omitted when building the system.  In this way, both originally and upon modification, all methods' entries and exits are properly logged.
 
 Aspects have been applied to finite-state machines for sequence diagrams in a modeling (UML) setting~\cite{aspectsUML}.  Our use of aspects extends that work by taking advantage of types in Scala to formulate advice and guide FSM modifications. 
 
@@ -282,7 +282,7 @@ For this example and the results we present, the features of interest for a vend
     \item[Dispense Product] introduces a vendible item and its price.
     \item[Print Funds] causes the machine to display the total funds after each state change.
     \item[Insufficient Funds] introduces a prompt to advise the consumer to insert more funds to buy a particular item.
-    \item[Change Return] introduces a button that causes the machine to return unspent funds.
+    \item[Change Return] introduces a button (input to the FSM) that causes the machine to return unspent funds.
     \item[Peanut Warning] requests confirmation of purchase for items that contain peanuts.
     \item[Buy More] allows the consumer to continue purchasing items if funds remain in the machine.  The \textbf{Change Return} feature, if present, allows the consumer to request return of the remaining funds.
 \end{description}
