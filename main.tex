@@ -199,18 +199,18 @@ We show that our approach can generate designs that are exponentially large in t
 
 \section{Introduction}
 
-The advent of hardware-generation languages like Chisel~\cite{chisel:article} has promoted the adoption of techniques and abstractions by hardware designers that were previously available only to software systems and their designers. As HTML describes the components, structure, and connections of a web page, so do hardware-characterization languages such as VHDL~\cite{vhdl} and Verilog~\cite{verilog} describe the components and interconnections of hardware circuit elements. While those languages provide some abstractions (such as arithmetic operations and restrictive macros), the paradigms and practices used widely in successful software engineering efforts are largely unavailable.
+The advent of hardware-generation languages like Chisel~\cite{chisel:article} has enabled the adoption of techniques and abstractions by hardware designers that were previously available only to software systems and their designers. As HTML describes the components, structure, and connections of a web page, so do hardware-characterization languages such as VHDL~\cite{vhdl} and Verilog~\cite{verilog} describe the components and interconnections of hardware circuit elements. While those languages provide some abstractions (such as arithmetic operations and restrictive macros), the paradigms and practices used widely in successful software engineering efforts are largely unavailable.
 
-By contrast, hardware-generation languages allow a designer to write a program whose \emph{execution} generates the hardware design. The program can be authored using para\-digms that promote efficiency, reuse, rigorous testing, and clarity of expression. Our work builds on the hardware-generation language Chisel~\cite{chisel:book}, which is in turn built on Scala~\cite{scala-overview-tech-report}. Chisel is a Scala-embedded domain specific language with libraries that generate Verilog when a Chisel program is executed.
+By contrast, hardware-generation languages allow a designer to write a program whose \emph{execution} generates the hardware design. The program can be authored using para\-digms that promote efficiency, reuse, rigorous testing, and clarity of expression. Our work builds on the hardware-generation language Chisel~\cite{chisel:book}, which is in turn built on Scala~\cite{scala-overview-tech-report}. Chisel is a Scala-embedded domain-specific language with libraries that generate Verilog when a Chisel program is executed.
 
 % A recent example showing the advantages of hardware generation over characterization concerns an adder~\cite{Deters:adder}. Using VHDL, a hardware designer can request that an adder circuit be optimized for either for delay (carry lookahead) or for area (carry propagate). Using hardware generation, an adder can be specified that combines \emph{both} forms of carry computation, to meet a timing or area constraint, while otherwise optimizing for the other resource.
 
-Chisel has proven itself robust in pedagogy and industry, serving as the basis for courses in digital logic~\cite{vlsicourse} and serving as a platform for describing full-featured RISC-V systems~\cite{chisel:riscv}.  
+Chisel has proven itself robust in pedagogy and industry, serving as the basis for courses in digital logic~\cite{vlsicourse} and serving as a platform for describing full-featured RISC-V architectures~\cite{chisel:riscv}.  
 %Our long-term goal is to develop a feature-oriented characterization of RISC-V~\cite{riscv}.  Here we focus on a specific, more modest construct used in hardware designs.
 
 In this paper, we consider a feature-oriented programing (FOP) approach to generating hardware, specifically \emph{finite-state machines} (FSMs).   Our contributions are as follows:
 \begin{itemize}
-    \item In Section~\ref{sec:vend}, we describe an approach to formulating features in FSMs based on aspect-oriented programming (AOP).  We apply this idea to a featureful vending machine in Section~\ref{sec:ccut} and present results on the automatically generated FSMs with specific featuere sets in Section~\ref{sec:vendresults}.
+    \item In Section~\ref{sec:vend}, we describe an approach to formulating features in FSMs based on aspect-oriented programming (AOP).  We apply this idea to a featureful vending machine in Section~\ref{sec:ccut} and present results on the automatically generated FSMs with specific feature sets in Section~\ref{sec:vendresults}.
     \item In Section~\ref{sec:nim} we introduce a generative approach to composing larger FSMs from smaller, behavior-specific machines, illustrated using the game of Nim.  The algorithm to achieve this \emph{cross-product} composition is presented in Section~\ref{sec:cpalg}, and results from its application to variations of Nim are shown in Section~\ref{sec:nimresults}.
     \item We combine both of the above ideas in Section~\ref{sec:cache} to the generation of an SIMD cache, similar to one currently in use by~AMD.  The parallelism of the cache is generated via the cross-product technique and a coherence scheme is imposed as a feature using the AOP technique.
     \item Theoretically, Sections~\ref{sec:vend} and~\ref{sec:nim} show that a specification of size $O(n)$ can (in the limit) generate variations or structures of size~$O(2^{n})$.  Our results in Section~\ref{sec:results} confirm empirically that our approach offers significant leverage toward generating large, complex FSMs from relatively smaller and simpler ones. 
@@ -219,7 +219,7 @@ In this paper, we consider a feature-oriented programing (FOP) approach to gener
         \item correct by construction if the constituent machines and aspectual advice are correct, and
         \item subject to analyses of regular languages, about which much is decidable. 
     \end{itemize}
-    \item The code we have developed for this work integrates with Chisel and is available via \texttt{github}~\cite{anon}.
+    \item The code we have developed for this work integrates with Chisel and is available via \texttt{github}.
 \end{itemize}
 
 
@@ -228,9 +228,11 @@ In this paper, we consider a feature-oriented programing (FOP) approach to gener
 We review here the concepts and prior work upon which our work is based.
 \subsection{Aspect-oriented programming}
 
-Our work builds on a programming paradigm available in the software community that efficiently supports the expression and application of \emph{cross-cutting} concerns in a software system.  Aspect-Oriented Programming~(AOP)~\cite{gregor:97} and its realization in systems such as AspectJ~\cite{aspectj} allow developers to express ideas in a software system that affect multiple components of that system in support of a common idea or feature. A commonly cited example is the implementation of a logging feature, so that every method when called and prior to returning logs those events to some output stream. Absent an AOP approach, a developer is faced with the following difficulties:
+Our work builds on a programming paradigm available in the software community that efficiently supports the expression and application of \emph{cross-cutting} concerns in a software system.  Aspect-Oriented Programming~(AOP)~\cite{gregor:97} and its realization in systems such as AspectJ~\cite{aspectj} allow developers to express ideas in a software system that affect multiple components of that system in support of a common idea or feature. A commonly cited example is the implementation of a logging feature, so that every method, when called and prior to returning, logs those events to some output stream. Absent an AOP approach, a developer is faced with the following difficulties:
 \begin{itemize}
-    \item Implementation of the feature would require modifying every method at its entry and every possible exit so that it emitted the proper log messages.  This is both tedious and error-prone, especially if methods can exit due to unforeseen actions such as exceptions.
+    \item Implementation of the feature requires modifying every method at its entry and every possible exit so that it issues the proper log messages.  
+    
+    This is both tedious and error-prone, especially if methods can exit due to unforeseen actions such as exceptions.
     \item Removing the feature, should it no longer be needed, is also tedious and error-prone.
     \item Placing the feature under some kind of conditional execution offers some relief, but
     \begin{itemize}
@@ -239,51 +241,52 @@ Our work builds on a programming paradigm available in the software community th
     \end{itemize}
 \end{itemize}
 %Macro processors can achieve the proper effect, namely including the code only when it is desired.  However, it is still incumbent on developers to remember to call the macros at the proper points in a program.
-AOP is a great solution to this and similar problems, because a developer can specify that at \emph{every} method entry and exit (other than the method that does the logging), a segment of code should be inserted to accomplish the appropriate logging.  If the logging is no longer desired, the associated aspect is simply omitted when building the system.  In this way, both originally and upon modification, all methods' entries and exits are properly logged.
+AOP offers a great solution to this and similar problems, because a developer can specify via aspects that at \emph{every} method entry and exit (other than the method that does the logging), a segment of code should be inserted to accomplish the appropriate logging.  If the logging is no longer desired, the associated aspect is simply omitted when building the system.  In this way, both originally and upon modification, all methods' entries and exits are properly logged.
 
 Aspects have been applied to finite-state machines for sequence diagrams in a modeling (UML) setting~\cite{aspectsUML}.  Our use of aspects extends that work by taking advantage of types in Scala to formulate advice and guide FSM modifications. 
 
 \subsection{Benefits of feature-oriented programming}\label{sec:benefop}
 
-Our work concerns the generation of FSMs that incorporate desirable subsets of features.  We show that FSMs can be specified much more efficiently using this approach.  Moreover, the FSMs ultimately generated by the Chisel toolchain contain only those features of interest, requiring fewer resources than would a full-featured, monolithic specification that disables undesirable features.
+Our work concerns the generation of FSMs that incorporate desirable subsets of features.  We show that FSMs can be specified much more efficiently using this approach.  Moreover, the FSMs ultimately generated by the Chisel toolchain contain only those features of interest, requiring fewer resources than would a full-featured, monolithic specification whose undesirable features are disabled.
 
 This approach has also been attractive for managing product lines in which features evolve over time, affecting not only the base system but also other features~\cite{10.1145/2897695.2897701}. 
 
-An example of the benefits obtainable from an FOP approach to a featureful system concerns the CORBA~\cite{CORBA:00} Event Channel~\cite{CORBAService:02a}. The standard implementation is \emph{monolithic}, offering all possible features in all allowable combinations.  A decomposition of the Event Channel in terms of its features has demonstrated that useful subsets of those features use significantly fewer resources when formulated generatively~\cite{Pratap:04}.   
+An example from the software world of the benefits obtainable from an FOP approach to a featureful system concerns the CORBA~\cite{CORBA:00} Event Channel~\cite{CORBAService:02a}. The standard implementation is \emph{monolithic}, offering all possible features in all allowable combinations.  A decomposition of the Event Channel in terms of its features has demonstrated that useful subsets of those features use significantly fewer resources when formulated generatively~\cite{Pratap:04}.   
 
-We find that the FSMs we generate enjoy the same benefits as the software systems we describe above:
+We show in this work that the FSMs generated using our approach enjoy analogous benefits seen in the above software systems:
 \begin{itemize}
-    \item Smaller footprint (less logic) is obtained by including only those features of interest.
-    \item The clock rate of the resulting systems is determined only by active features:  logic related to inactive features is completely absent from the resulting designs.
+    \item Smaller footprint is obtained by including only those features of interest.  The resulting hardware designs have fewer states and less logic, supporting only the features of interest.
+    \item The clock rate of a hardware system is determined in part by the amount of logic that must complete in a clock cycle.   The clock rate of the systems we generate is governed only by active features:  logic related to inactive features is completely absent from the resulting designs.
 \end{itemize}
 
   
 \subsection{Decidability}\label{sec:decide}
 
-The theory of regular languages and finite-state machines allows that questions related to properties of the behavior of such machines have definite and algorithmically obtained answers~\cite{sipser}. For example, consider a feature that is intended to \emph{extend} the behavior of a design, so that all previous inputs are allowed, but the feature introduces some other allowable inputs. For example, consider an FSM that scans characters to parse them as decimal numerals.  An extension might allow for hexadecimal numerals, if the input begins with ``0x''.  We would like to prove that the extended language is indeed a proper superset of the original language, which is possible for finite-state machines.  As another example, \emph{timed automata}~\cite{10.1145/2518102} could reason about real-time properties of finite-state machines generated by our approach.
+The theory of regular languages and finite-state machines allows that questions related to properties of the behavior of such machines have definite and algorithmically obtained answers~\cite{sipser}. For example, consider a feature that is intended to \emph{extend} the behavior of a design, so that all previous inputs are allowed, but the feature introduces some other allowable inputs. For example, consider an FSM that scans characters to parse them as decimal numerals.  A feature might extend that syntax to accommodate hexadecimal numerals for inputs that begin with \texttt{0x}.  With our approach, the introduced feature creates a new FSM, whose language is provably a proper superset of the original FSM's language.  As another example, \emph{timed automata}~\cite{10.1145/2518102} could reason about real-time properties of finite-state machines generated by our approach.   
 
 \section{Generative FSM specifications}
 
-We next illustrate our two mechanisms for generating designs.  The first uses aspect-oriented advice to incorporate features selectively into an FSM.  The second builds an FSM from the synchronous simulation of smaller FSMs.
+We next illustrate our two FOP constructs for generating complex FSMs.  The first uses aspect-oriented advice to incorporate features selectively into an FSM.  The second builds a \emph{cross-product} FSM from the synchronous simulation of smaller FSMs.
 
 \subsection{Feature introduction via AOP}\label{sec:vend}
 
-As an example of a featureful design, we consider an FSM design for a vending machine.   A state in our design carries the necessary \emph{traits} to represent its role in the machine's operation:  the funds inserted and the potential products dispensed.  Our generative approach described below offers the following advantages over a monolithic design:
+As an example of a featureful hardware design, we consider an FSM implementation of a vending machine.   A state in our design carries the necessary (Scala) \emph{traits} to represent its role in the machine's operation:  the funds inserted and the potential products dispensed.  Our generative approach described below offers the following advantages over a monolithic design:
 \begin{itemize}
-    \item The simplest design becomes correct by construction, with states generated automatically based on currency values.  Introduction of a new value of coinage automatically creates the necessary additional states.
-    \item Features of interest are easily applied based on states' traits.
+    \item The design itself is simpler and clearer when described using FOP.  A monolithic design that tangles all features can be realized, but the resulting FSM does not readily make the features apparent.  Moreover, the work to create that monolithic implementation is tedious and error-prone.
+    \item Modification of the FSM is greatly simplified.  For example, introduction of a new value of coinage automatically creates the necessary additional states and transitions.
+    \item Scala traits allow elegant expression of an application's behaviors in support of FOP hardware design.
 \end{itemize}
-For this example and the results we present, the features of interest are as follows:
+For this example and the results we present, the features of interest for a vending machine are as follows:
 \begin{description}
     \item[Add Currency] introduces a value of coinage.
-    \item[Dispense Product] introduces the price of a vendible item.
-    \item[Print Funds] display the total funds after each state change.
-    \item[Insufficient Funds] advises the user to insert more funds to buy a particular item.
-    \item[Change Return] causes the machine to return inserted funds.
+    \item[Dispense Product] introduces a vendible item and its price.
+    \item[Print Funds] causes the machine to display the total funds after each state change.
+    \item[Insufficient Funds] introduces a prompt to advise the consumer to insert more funds to buy a particular item.
+    \item[Change Return] introduces a button that causes the machine to return unspent funds.
     \item[Peanut Warning] requests confirmation of purchase for items that contain peanuts.
-    \item[Buy More] allows the user to continue purchasing items if funds remain in the machine.
+    \item[Buy More] allows the consumer to continue purchasing items if funds remain in the machine.  The \textbf{Change Return} feature, if present, allows the consumer to request return of the remaining funds.
 \end{description}
-The dependencies of these features are shown in Figure~\ref{fig:vmDependencies}, but this graph is not needed for construction:  the advice for a given feature is applicable only when its associated \emph{joinpoints} exist in the FSM.  As is typical with aspect-oriented approaches, all advice is presented to the weaver (our runtime library for Chisel), and the aspects are continually applied until no changes occur.
+The dependencies of these features are shown in Figure~\ref{fig:vmDependencies}, but this graph is not needed for construction:  the advice for a given feature is applicable only when its associated \emph{joinpoints} exist in the FSM.  As is typical with aspect-oriented approaches, all advice is presented to a \emph{weaver} (our runtime library for Chisel), and the aspects are continually applied until no changes occur.
 
 For example, the advice for \textbf{Add Currency} of coinage $k$ specifies that for any state representing that $n$ cents have been inserted, a state representing $n+k$ cents must exist, with a transition from state~$n$ to state~$n+k$ based on the insertion of coinage $k$.   This advice fails to terminate if not capped by some upper bound on funds, which could be related to the most expensive product sold. For example, Figure~\ref{fig:vend1} shows a machine that
 \begin{itemize}
@@ -295,7 +298,7 @@ The FSM is automatically generated by the advice for \textbf{Add Currency} and \
 
 A monolithic approach requires designers to specify all states and transitions for each feature subset, which is tedious and error-prone. With our approach, all states and transitions are obtained generatively and are correct by construction, if the advice for their creation is correct.
 
-In terms of leverage, consider an FSM for which there are $n$ orthogonal and independent features.  A valid system could thus be written or generated with or without each of those $n$ features.  This leads to $2^{n}$ feature-specific implementations.  While it is unlikely that each of those implementations would find an application, the ability to generate \emph{any} of them with the push of a button offers significant leverage.
+In terms of leverage, consider an FSM for which there are $n$ orthogonal and independent features.  A valid system could thus be written or generated with or without each of those $n$ features.  This leads to $2^{n}$ feature-specific implementations.  While it is unlikely that each of those implementations would find an application, the ability to generate \emph{any} of them automatically offers significant leverage.
 
 \begin{figure*}
     \centering
@@ -313,7 +316,7 @@ In terms of leverage, consider an FSM for which there are $n$ orthogonal and ind
 
 \subsection{Generating FSMs via cross-product composition}\label{sec:nim}
 
-Nim~\cite{enwiki:1102668015} is a broad class of impartial mathematical strategy games, which traditionally involve multiple heaps of tokens (\textit{e.g.}, sticks) and two or more alternating players. The current player removes an allowable number of tokens from a subset of the heaps. The winner can be the player taking the last token, or (in the \textit{mis\`{e}re} version) that player loses.
+Nim~\cite{enwiki:1102668015} is a broad class of impartial mathematical strategy games, which traditionally involve multiple heaps of tokens (\textit{e.g.}, sticks) and two or more alternating players. The current player removes an allowable number of tokens from a subset of the heaps. The winner is usually defined as the player taking the last token. In a \textit{mis\`{e}re} version of the game, that player would lose.
 
 While we initially approached this game with the ideas in Section~\ref{sec:vend}, states in this game represent the number of tokens present in each heap and the current player's turn.  Aspectual features should be additive, expanding the behavior of their targets, and while cross-cutting, they do not typically completely rewrite their targets.  With Nim, the machine is changed throughout by the addition of an additional player or heap.   
 
@@ -450,7 +453,7 @@ Consider this algorithm applied to Figures~\ref{fig:nimPlayerFSM} and \ref{fig:n
 \section{Aspect Oriented Finite State Machine Library}\label{sec:foam}
 We have implemented an aspect oriented finite state machine library, which we call Foam,  in Scala\footnote{https://github.com/wustl-frisc/foam}. In this section, we detail the library as well as code generation.
 
-While Foam is not a fully fledged domain specific language, we have modeled the interface after the well established aspect-oriented extension to Java, AspectJ~\cite{}. The intention is to give aspect-oriented practitioners a familiar interface for interacting with the finite state machines. Since the library is implemented in plain Scala, we have access to and utilize the full powers of the type system. Following our vending machine example, Figure~\ref{lst:PrintFunds} shows the implementation of the \textbf{Print Funds} feature in Foam.
+While Foam is not a fully fledged domain specific language, we have modeled the interface after the well established aspect-oriented extension to Java, AspectJ~\cite{aspectj}. The intention is to give aspect-oriented practitioners a familiar interface for interacting with the finite state machines. Since the library is implemented in plain Scala, we have access to and utilize the full powers of the type system. Following our vending machine example, Figure~\ref{lst:PrintFunds} shows the implementation of the \textbf{Print Funds} feature in Foam.
 
 We provide a series of extendable base classes to represent finite state machines. The library takes care of building pointcuts, applying aspects, and performing the cross-product. We have even provided reflexive access, just like AspectJ to the join-point and its incoming and outgoing paths. Given this, in relatively few lines of code, programmers can create advice with ease.
 
@@ -462,7 +465,7 @@ We provide a series of extendable base classes to represent finite state machine
 \end{figure*}
 
 \subsection{Code Generation}
-The library currently supports emitting GraphVis and Verilog code. Code generation is decoupled from the creation of the finite state machines, as the library generates code based off the internal data structures, not the Scala code itself. Code GraphVis and Verilog code are generated by Graphviz4S~\cite{} and Chisel, respectively. 
+The library currently supports emitting GraphVis and Verilog code. Code generation is decoupled from the creation of the finite state machines, as the library generates code based off the internal data structures, not the Scala code itself. Code GraphVis and Verilog code are generated by Graphviz4S~\cite{Ldpe2G:19} and Chisel, respectively. 
 
 \section{Case studies and results}\label{sec:results}
 Here we present three case studies to demonstrate the generative ability of our framework: a Vending Machine, the game of Nim, and SIMD cache coherence.
@@ -567,11 +570,11 @@ Heaps &Players &States &Tokens &Transitions \\\midrule
 \end{figure}
 
 \subsection{SIMD Caches}\label{sec:cache}
-Ultimately, the goal of this work is to make the design of complex hardware easier through generation. Here, we will demonstrate how we can combine our techniques with ``off the shelf'' components to generate SIMD Caches that are coherent with each other. While we recognize that this is purely a pedagogical example, it is modeled off the real-world RDNA Architecture from AMD~\cite{}.
+Ultimately, the goal of this work is to make the design of complex hardware easier through generation. Here, we will demonstrate how we can combine our techniques with ``off the shelf'' components to generate SIMD Caches that are coherent with each other. While we recognize that this is purely a pedagogical example, it is modeled off the real-world RDNA Architecture from AMD~\cite{AMD:19}.
 
 The RDNA architecture packages two SIMD execution units into a single unit called a \textit{work-group processors}. Each work-group shares L0 cache between each SIMD unit. This cache is kept coherent through serialization of the execution when conflicts are detected. Two work-groups are then packaged together into a \textit{Dual Compute Unit} (DCU). Currently, the two L0s within a DCU are kept coherent via software. 
 
-Suppose that we wanted to model a similar cache system ourselves, but instead of handling data conflicts between the two SIMD units in a work-group processor, we use the MSI cache coherence protocol~\cite{}. For this case study, we have selected the ready-made cache from RISC-V Mini~\cite{}. As-is, this cache, shown in Figure \ref{fig:cacheBefore}, is directly connected to main memory in a single core system and does not have any coherence protocol. Using a feature oriented approach, we can retrofit this cache with advice that implements the MSI protocol, shown in Figure \ref{fig:cacheAfter}. In order to model the interactions between the two now coherent caches, we can cross-product the two. This results in an FSM with 729 states, 3,376 tokens, and 2,461,104 transitions. Hardware designers could use this sort of modeling for correctness verification, however that is beyond the scope of this paper.
+Suppose that we wanted to model a similar cache system ourselves, but instead of handling data conflicts between the two SIMD units in a work-group processor, we use the MSI cache coherence protocol~\cite{Good83}. For this case study, we have selected the ready-made cache from RISC-V Mini~\cite{Kim:22}. As-is, this cache, shown in Figure \ref{fig:cacheBefore}, is directly connected to main memory in a single core system and does not have any coherence protocol. Using a feature oriented approach, we can retrofit this cache with advice that implements the MSI protocol, shown in Figure \ref{fig:cacheAfter}. In order to model the interactions between the two now coherent caches, we can cross-product the two. This results in an FSM with 729 states, 3,376 tokens, and 2,461,104 transitions. Hardware designers could use this sort of modeling for correctness verification, however that is beyond the scope of this paper.
 
 \begin{figure}
     \centering
@@ -580,14 +583,14 @@ Suppose that we wanted to model a similar cache system ourselves, but instead of
     \label{fig:cacheBefore}
 \end{figure}
 
-\begin{figure*}
+\begin{figure}
     \centering
-    \includegraphics[width=0.5\linewidth]{figures/cacheFSM2.pdf}
+    \includegraphics[width=1.0\linewidth]{figures/cacheFSM2.pdf}
     \caption{The cache FSM from RISC-V Mini with the MSI protocol.}
     \label{fig:cacheAfter}
-\end{figure*}
+\end{figure}
 
-Imagine that in the next iteration of the architecture, the designers wanted to use hardware coherence between all the SIMD units in a DCU rather. Instead of having to start the model completely from scratch, hardware designers can simply instantiate two more caches into the system. Furthermore, instead of being locked into a single cache coherence protocol, the hardware designers may want to choose the MESI protocol~\cite{}, for their next iteration. With our approach, this protocol can just be applied instead of the MSI protocol. 
+Imagine that in the next iteration of the architecture, the designers wanted to use hardware coherence between all the SIMD units in a DCU rather. Instead of having to start the model completely from scratch, hardware designers can simply instantiate two more caches into the system. Furthermore, instead of being locked into a single cache coherence protocol, the hardware designers may want to choose the MESI protocol~\cite{Papamarcos:84}, for their next iteration. With our approach, this protocol can just be applied instead of the MSI protocol. 
 
 \section{Future Work}
 In future work, we plan on creating a fully feature-oriented cache using our system. Hardware caches are ripe for feature-oriented design as they contain many orthogonal features. For example, if we wanted to build a cache model even closer to the RDNA architecture, the original cache FSM would need to be write-through, 4-way set associative, and utilize an LRU replacement policy. Instead of forcing hardware designers into choosing an initial design and refactoring, write policy, allocation policy, replacement policy, and associativity could all be selectable features of the microarchitecture.
@@ -597,6 +600,7 @@ Beyond just the cache, it is easy to extend this concept of feature-oriented har
 %%
 %% The next two lines define the bibliography style to be used, and
 %% the bibliography file.
+\clearpage
 \bibliographystyle{ACM-Reference-Format}
 \bibliography{acmart,bibdbase,networks}
 
