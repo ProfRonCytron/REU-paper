@@ -372,7 +372,7 @@ In terms of leverage, consider the cross-product generation of an FSM from two i
 
 \section{Formalism}\label{sec:formal}
 We have developed a formalism to describe both of the feature-decomposition techniques. We begin with an FSM $M$, typically defined as follows: 
-\[M = (Q, \Sigma, \delta, q_0, F)\]where $Q$ is a set of states, $\Sigma$ is a set of input symbols, $\delta$ is the transition function, $q_0$ is the start state, and $F$ is the set of accepting states.  A state is typically denoted by an upper-case letter;  lower-case letters denote input symbols and strings.  The symbol $\lambda$ denotes the empty string.  When an FSM is drawn as a graph, the start state receives an edge with no sources, and an accepting state is drawn with two concentric circles. 
+\[M = (Q, \Sigma, \delta, q_0, F)\]where $Q$ is a set of states, $\Sigma$ is a set of tokens, $\delta$ is the transition function, $q_0$ is the start state, and $F$ is the set of accepting states.  A state is typically denoted by an upper-case letter;  lower-case letters denote tokens and strings.  The symbol $\lambda$ denotes the empty string.  When an FSM is drawn as a graph, the start state receives an edge with no sources, and an accepting state is drawn with two concentric circles. 
 
 The formalisms presented here are implemented in Chisel as a library we call Foam, described in Section~\ref{sec:foam}.  The examples and results presented in this paper were created using Foam.  
 
@@ -445,11 +445,41 @@ $L$ is initialized with the combined state of the input machines' starting state
 \item The set $P$ keeps track of combined states that have been processed.
 \item From the above, it is clear that a combined state is placed on $L$ at most once.
 \item At line~13 of Figure~\ref{fig:algo}, the algorithm is modifying $\delta_C$ to add the transition
-\[s \xrightarrow{(a,b)} d\]
+\(s \xrightarrow{(a,b)} d\).
 This modification must make concomitant changes to $Q_C$ and $\Sigma_C$, potentially introducing the new state $d$ and new symbol $(a,b)$, respectively.
 \item The combined state $d$ is marked as an accepting state in FSM~$C$ if both of its components are accepting states.
 \end{itemize}
-Consider this algorithm applied to Figures~\ref{fig:nimHeapFSM} and \ref{fig:nimPlayerFSM}, with $L = \{(\text{Player A}, [5])\}$. In this case, $s = (\text {Player A}, [5])$; it is added to the already-processed states list $P$, and then we consider the Cartesian product of transitions from state $\text{Player A}$ in the player machine and from state $[5]$ in the heap machine. This gives us $\{\text{Player A} \xrightarrow{B} \text{Player B}\} \times \{[5] \xrightarrow{\text{Take } 1} [4], [5] \xrightarrow{\text{Take } 2} [3]\}$. First consider the pair of transitions $(\text{Player A} \xrightarrow{B} \text{Player B}, [5] \xrightarrow{\text{Take } 1} [4])$: the combined destination state is $(\text{Player B}, [4])$. As the combined destination state is not already in $P$, it is added to the work queue $L$. The transition $(\text {Player A}, [5]) \xrightarrow{(B, \text{Take } 1)} (\text{Player B}, [4])$ is added to the cross product machine's transition function, with the state $(\text{Player B}, [4])$ being added to $Q_C$ and $(B, \text{Take } 1)$ being added $\Sigma_C$. As $[4]$ is not an accepting state, their destination state is not added to $F_C$. Then, $(\text{Player A} \xrightarrow{B} \text{Player B}, [5] \xrightarrow{\text{Take } 2} [3])$ would be processed similarly. \pnote{Is it worth adding $X$ state would be added to $L$, $Y$ to $P$, etc?  YES ron says}
+
+Consider this algorithm applied to Figures~\ref{fig:nimHeapFSM} and \ref{fig:nimPlayerFSM}, with $L = \{(\text{Player A}, [5])\}$. 
+\begin{itemize}
+    \item Currently $s = (\text {Player A}, [5])$
+    \item $s$ is added to $P$ so that it will not be considered again for processing.
+    \item We consider the Cartesian product of transitions from state $\text{Player A}$ in the player machine and from state $[5]$ in the heap machine. 
+    \item This yields 
+\[
+        \text{Player A} \xrightarrow{B} \text{Player B} \\ \times [5] \xrightarrow{\text{Take } 1} [4]
+        \]
+        and
+        \[
+        \text{Player A} \xrightarrow{B} \text{Player B} \\ \times  [5] \xrightarrow{\text{Take } 2} [3]
+        \]
+    \item Consider $(\text{Player A} \xrightarrow{B} \text{Player B}, [5] \xrightarrow{\text{Take } 1} [4])$
+    \item The combined destination state is $(\text{Player B}, [4])\not\in P$.
+    \item It is therefore added to the work queue $L$. 
+    \item $(\text {Player A}, [5]) \xrightarrow{(B, \text{Take } 1)} (\text{Player B}, [4])$ is added to the cross-product machine's transition function.
+    \item State $(\text{Player B}, [4])$ is added to $Q_C$.
+    \item Token $(B, \text{Take } 1)$ is added to $\Sigma_C$.
+    \item Because $[4]$ is not an accepting state, $(\text{Player B}, [4])$ is not added to $F_C$. 
+\end{itemize}
+The next transition $(\text{Player A} \xrightarrow{B} \text{Player B}, [5] \xrightarrow{\text{Take } 2} [3])$ is processed similarly:
+\begin{itemize}
+    \item The combined destination state is $(\text{Player B}, [3])$. 
+    \item Because the combined destination state is not in $P$, it has not been processed yet, so it is added to $L$. 
+    \item Transition $(\text {Player A}, [5]) \xrightarrow{(B, \text{Take } 2)} (\text{Player B}, [3])$ is added to the cross-product machine's transition function.
+    \item State $(\text{Player B}, [3])$ is added to $Q_C$.
+    \item Token $(B, \text{Take } 2)$ is added $\Sigma_C$.
+    \item Because $[3]$ is not an accepting state, $(\text{Player B}, [3])$ is not added to $F_C$.  
+\end{itemize}
 
 % The algorithm begins by combining the two starting states and adding it to the work queue. It then proceeds by removing the first entry from the work queue, splitting it into its two component states, and iterates through all combinations of transitions from the component states within their respective machines. For each pair of transitions, their destination states are combined into a composite state, and is marked for later processing. Then, the cross product machine's transition function is augmented to include this transition, and the resulting state is marked as an accepting state if both component states are likewise accepting. 
 
@@ -480,7 +510,7 @@ Figure~\ref{fig:vmData} shows the results for different endpoints generated by o
 
 In these cases the number of states increase by 2.5x in the simplest endpoint up to 4.6x in the most complex, and the transitions by 2.5x and 5x respectively. Recall, this is in a relatively simple vending machine that can only accept up to 100 units of value. Simply doubling the amount of accepted value to 200 creates a machine with 284 states (10.5x increase over the base) and 3113 transitions (16x increase over the base). However, this is accomplished in our library with relatively few lines of code. The largest feature in terms of code is \textbf{Peanut Warning}, which is implemented in just 39 lines.
 
-Despite the growing number of generated states and transitions as the features increase in Figure~\ref{fig:vmData}, the resulting Look Up Tables (LUTs) taken up by the FSM are relatively modest. This is because hardware synthesis tools can represent states using a linear encoding scheme.  For an FSM with $n$ states, each state takes only $O(\log{n})$ space when encoded as an integer.  However, the \emph{specification} of that circuit to a synthesis tool must be expressed state-by-state.  If the number of transitions per state is bounded by a constant, then the specification (\textit{e.g.}, lines of Verilog) takes $O(n)$ space.  Our generative approach to hardware FSMs opens hardware designers to implementing much larger FSMs than are currently sustainable with a hand-coded approach. 
+Despite the growing number of generated states and transitions as the features increase in Figure~\ref{fig:vmData}, the resulting hardware resources, in this case Look Up Tables (LUTs), used by the FSM are relatively modest. This is because hardware synthesis tools can represent states using a linear encoding scheme.  For an FSM with $n$ states, each state takes only $O(\log{n})$ space when encoded as an integer.  However, the \emph{specification} of that circuit to a synthesis tool must be expressed state-by-state.  If the number of transitions per state is bounded by a constant, then the specification (\textit{e.g.}, lines of Verilog) takes $O(n)$ space.  Our generative approach to hardware FSMs opens hardware designers to implementing much larger FSMs than are currently sustainable with a hand-coded approach.
 
 \begin{figure}
     \centering
@@ -552,7 +582,7 @@ Figure~\ref{tab:subtractionNim} shows the results for different endpoints of the
 \checkmark &\checkmark &\checkmark &4 &83 &1162 \\
 \bottomrule
 \end{tabular}
-\caption{Number of generated states and transitions for the Subtraction game. Every game is played with a single starting heap of 21 sticks. \pnote{Re-iterate the starting quantity of sticks here? or just leave that in the above paragraph?}}\label{tab:subtractionNim}
+\caption{Number of generated states and transitions by selected features for the Subtraction game. Every game is played with a single starting heap of 21 sticks.}\label{tab:subtractionNim}
 \end{figure}
 
 \paragraph{Circle Nim}
@@ -575,7 +605,7 @@ Heaps &Players &States &Transitions \\\midrule
 9 &4 &1429 &157190 \\
 \bottomrule
 \end{tabular}
-\caption{Number of generated states and transitions by variation of features for Circle Nim. Each heap contained one stick; players could take from between one and three consecutive heaps.}\label{tab:circleNim}
+\caption{Number of generated states and transitions by selected features for Circle Nim. Each heap contained one stick; players could take from between one and three consecutive heaps.}\label{tab:circleNim}
 \end{figure}
 
 \subsection{SIMD Caches}\label{sec:cache}
