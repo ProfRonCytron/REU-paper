@@ -13,6 +13,13 @@
 \usepackage{graphicx}
 \usepackage{textcomp}
 \usepackage{xcolor}
+\usepackage{booktabs, multirow} % for borders and merged ranges
+\usepackage{soul}% for underlines
+\usepackage{comment}
+\usepackage{wrapfig}
+\usepackage{capt-of}
+\usepackage{url}
+\include{jdeters}
 \def\BibTeX{{\rm B\kern-.05em{\sc i\kern-.025em b}\kern-.08em
     T\kern-.1667em\lower.7ex\hbox{E}\kern-.125emX}}
 
@@ -44,13 +51,13 @@ St. Louis, MO, USA \\
 %% The abstract is a short summary of the work to be presented in the
 %% article.
 \begin{abstract}
-We investigate the generation of complex, featureful finite-state machines from relatively simpler ones using two constructs.  The first, inspired by aspect-oriented programming, applies incremental changes to the states and edges of a finite-state machine to alter and customize its behavior in response to features of interest.   This allows efficient specification and generation of numerous designs, each containing only those features of interest for a particular application.
+Reconfigurable architectures enable the economical deployment of application-specific designs, and RISC-V has emerged as an open and flexible processor for supporting such applications.  Generally, some portions of a design may be executed on the RISC-V processor with other portions present in circuitry surrounding the processor.  Notably, a particular application may need only a subset of the architecture and microarchitecture of a full-featured RISC-V implementation.
 
-The second construct couples the behavior of multiple finite machines into a single machine that processes its inputs simultaneously.  While this is formally the concatenation of regular languages, we present a \emph{cross-product} algorithm that allows the resulting design to process its wider inputs in lock-step.  This is necessary for the proper timing of actions taken by the resulting machine. 
+In this paper we consider a feature-oriented approach for specifying finite-state machines, which form the basis of cache controllers (and other components) for RISC-V implementations, and which are commonly found in hardware designs. Using a library we constructed for Chisel, developers can apply features at will, with the resulting machine containing only the circuitry needed to support the desired features.  
 
-Each construct is illustrated and results are presented using a simple example:  a vending machine and the game of Nim, respectively.  We then apply the constructs in concert to generate a coherent, 2-way multiprocessor cache from a much simpler specification.
+Our library offers two constructs for building features. The first, inspired by aspect-oriented programming, applies incremental changes to the states and edges of a finite-state machine to alter and customize its behavior in response to features of interest.  The second construct couples the behavior of separate finite machines into a single machine that processes its inputs simultaneously.  We illustrate each construct separately using a vending machine and the game of Nim, respectively.  We then apply the constructs in concert to generate a coherent, 2-way multiprocessor cache from a much simpler specification.
 
-We show that our approach can generate designs that are exponentially large in the size of their specifications.  In addition to that significant design leverage, the resulting finite-state machines enjoy all the closure properties and proof opportunities for regular languages.
+Our approach offers significant leverage in supporting both the number and size of the generated designs.  We present results from synthesis that show the size of the design endpoints compared with the much smaller size of their specification.
 \end{abstract}
 
 
@@ -178,7 +185,7 @@ In terms of leverage, consider an FSM for which there are $n$ orthogonal and ind
 Nim~\cite{enwiki:1102668015} is a broad class of impartial mathematical strategy games, which traditionally involve multiple heaps of tokens (\emph{e.g.}, sticks) and two or more alternating players. The current player removes an allowable number of sticks from a subset of the heaps. The winner is usually defined as the player taking the last token. In a \emph{mis\`{e}re} version of the game, that player would lose.
 While we initially approached this game with the ideas in Section~\ref{sec:vend}, states in this game represent the number of tokens present in each heap and the current player's turn.  Aspectual features should be additive, expanding the behavior of their targets, and while cross-cutting, they do not typically completely rewrite their targets.  With Nim, the machine is changed throughout by the addition of an additional player or heap.   
 
-However, we realized that construction of even the most basic game of Nim can be regarded as the composition or simultaneous operation of two simpler machines:   one that represents only the allowable subtractions of tokens in a heap (such as the 5-token heap shown in Figure~\ref{fig:nimHeapFSM}) and one that represents only the alternation of players (such as the two-player alternation shown in Figure~\ref{fig:nimPlayerFSM}).  Transitions not shown in those machines are errors, such as Player~A taking two consecutive turns.   By a composition technique we present in Section~\ref{sec:cpalg}, we obtain the basic game of Nim shown in Figure~\ref{fig:nimFSM}.  That algorithm simulates the simultaneous, lock-step execution of the machines shown in Figures~\ref{fig:nimHeapFSM} and~\ref{fig:nimPlayerFSM}.
+However, we realized that construction of even the most basic game of Nim can be regarded as the composition or simultaneous operation of two simpler machines:   one that represents only the allowable subtractions of tokens in a heap (such as the 5-token heap shown in Figure~\ref{fig:nimHeapFSM}) and one that represents only the alternation of players (such as the two-player alternation shown in Figure~\ref{fig:nimPlayerFSM}).  Transitions not shown in those machines are errors, such as Player~A taking two consecutive turns.  Using a construction technique due to Harel~\cite{HAREL1987231} and well documented in Ptolomy~\cite{EdwardLee}, we obtain the basic game of Nim shown in Figure~\ref{fig:nimFSM}.  That algorithm simulates the simultaneous, lock-step execution of the machines shown in Figures~\ref{fig:nimHeapFSM} and~\ref{fig:nimPlayerFSM}.
 
 Following is our feature decomposition of Nim:
 \begin{description}[\IEEEsetlabelwidth{Number of Players}]
@@ -206,7 +213,7 @@ Formally, in the theory of regular languages, acceptable inputs for our problem 
 
 \begin{figure}
     \centering
-    \includegraphics[width=0.55\linewidth]{figures/nimexample/heapFSM.pdf}
+    \includegraphics[width=0.3\linewidth]{figures/nimexample/heapFSM.pdf}
     \caption{FSM for a 5-token heap that allows one or two tokens to be removed in a turn.}
     \label{fig:nimHeapFSM} 
 \end{figure}
@@ -215,7 +222,7 @@ We prefer to process the inputs more naturally as (A,2), (B,1), and (A,2), so th
 
 \begin{figure}
     \centering
-    \includegraphics[width=0.35\linewidth]{figures/nimexample/playerFSM.pdf}
+    \includegraphics[width=0.2\linewidth]{figures/nimexample/playerFSM.pdf}
     \caption{FSM specifying alternation of Players~A and~B.}
     \label{fig:nimPlayerFSM}
 \end{figure}
@@ -224,20 +231,20 @@ In support of the semantic actions occurring as they should, and requiring input
 
 In terms of leverage, consider the cross-product generation of an FSM from two identical FSMs each of size $m$ (states+transitions).  For example, we generate a 2-heap version of Nim by taking the cross product of two such FSMs, as described in Section~\ref{sec:cpalg}.  The resulting machine is of size $O(m^{2})$.  An $n$-way cross product generates a machine of size $O(m^{n})$, where $m$ is viewed as a constant here.  The structures we can generate with this approach are (in the limit) exponential in the size of their specifications.
 
-\begin{figure*}
+\begin{figure}
     \centering
-    \includegraphics[width=0.45\textwidth]{figures/nimexample/nimFSM.pdf}
+    \includegraphics[width=0.25\textwidth]{figures/nimexample/nimFSM.pdf}
     \caption{The resulting Nim finite-state machine.  The edge transitions are labeled with the player who acts to take the specified number of tokens. The state is labeled with the player who just completed a turn and the number of remaining tokens.}
     \label{fig:nimFSM}
-\end{figure*}
+\end{figure}
 
-\section{Formalism}\label{sec:formal}
-We have developed a formalism to describe both of the feature-decomposition techniques. We begin with an FSM $M$, typically defined as follows: 
+\section{Formalism for cross-cutting features}\label{sec:formal}\label{sec:ccut}
+We begin with an FSM $M$, typically defined as follows: 
 \[M = (Q, \Sigma, \delta, q_0, F)\]where $Q$ is a set of states, $\Sigma$ is a set of tokens, $\delta$ is the transition function, $q_0$ is the start state, and $F$ is the set of accepting states.  A state is typically denoted by an upper-case letter;  lower-case letters denote tokens and strings.  The symbol $\lambda$ denotes the empty string.  When an FSM is drawn as a graph, the start state receives an edge with no sources, and an accepting state is drawn with two concentric circles. 
 
-The formalisms presented here are implemented in Chisel as a library we call Foam, described in Section~\ref{sec:foam}.  The examples and results presented in this paper were created using Foam.  
+The formalism presented here are implemented in Chisel as a library we call Foam, described in Section~\ref{sec:foam}.  The examples and results presented in this paper were created using Foam.  
 
-\subsection{Cross-cutting features}\label{sec:ccut}
+
 We follow~\cite{aspectsUML} in the treatment of aspects for FSMs.  Essentially, a state is like a method and a transition between states is like a method call.  The usual forms of before, after, and around advice are available (\emph{cf}. AspectJ~\cite{AspectJ:01}).   A cross-cutting feature is implemented using advice that modifies an FSM's behavior before, after, or during a transition between states.
 
 As described below, a feature is comprised of \emph{advice} applied to \emph{pointcuts} of an FSM, which can formally change the language of the machine.  More broadly and usefully, the advice can affect actions taken by the machine as its inputs are processed.  
@@ -246,103 +253,24 @@ As described below, a feature is comprised of \emph{advice} applied to \emph{poi
 
 In AOP terminology, a pointcut yields a set of \emph{join points} at which advice is applied.  A join point associated with the above example would be a single token~``5'', such at the one between state ``10'' and ``15'', at which the value increases in the machine by ``5'' cents.  Because this is an \emph{after} pointcut, the join point has context that includes the state~``15'' that follows the token~``5'', as shown in Figure~\ref{fig:vend1}. 
 
-\begin{figure*}
+\begin{figure}
     \centering
-    \includegraphics[width=0.8\textwidth]{figures/vend2.pdf}
+    \includegraphics[width=0.5\textwidth]{figures/vend2.pdf}
     \caption{The resulting FSM of the application of Print Funds to the FSM from Figure \ref{fig:vend1}.}
     \label{fig:applyadvice}
-\end{figure*}
+\end{figure}
 
 \paragraph{Advice} This specifies \emph{what} changes to the FSM should be applied at a join point. In the \textbf{Print Funds} feature, a new state is inserted following each token~``5'' in the FSM. The exact print statement generated by the advice is determined by the context contained within the join point. For example, \texttt{Print \textcent15} is generated because the state~``15'' follows the token~``5'' discussed earlier. Furthermore, to prevent infinite application of features, the advice for \textbf{Print Funds} checks to see if the context in the join point is already a printing state. If so, no advice is applied. Like pointcuts, advice is written in Chisel/Scala. 
 
 Not only can advice insert new states, but it can also insert new symbols as well. Consider the \textbf{Peanut Warning} feature as an example. The pointcut is predicated upon a dispense state having a ``peanut'' trait. Because this is a \emph{before} pointcut, each join point has context that includes transition information that targets the state. In Figure~\ref{fig:applyadvice2} this is $10 \xrightarrow{\text{Peanut}}$ and $15 \xrightarrow{\text{Peanut}}$. The advice will insert a new ``Contains Nuts!''~state and ``Accept''~token for each of the join points. It also inserts a new transition on the ``Reject''~token whose destination is determined by the context contained in the join point.
 
-\begin{figure*}
+\begin{figure}
     \centering
-    \includegraphics[width=0.8\textwidth]{figures/vend3.pdf}
+    \includegraphics[width=0.5\textwidth]{figures/vend3.pdf}
     \caption{The resulting FSM of the application of Peanut Warning to the FSM from Figure \ref{fig:vend1}.}
     \label{fig:applyadvice2}
-\end{figure*}
-
-\subsection{FSM feature composition using a cross product}\label{sec:cpalg}
-
-Figure~\ref{fig:algo} presents our algorithm for producing the lock-step, cross-product FSM from two deterministic FSMs.  The resulting machine's states are combined by taking a state from each of the two input FSMs.  We call such a state a \emph{combined state}, and it represents arrival at each of its constituent states in each of the input FSMs. 
-\begin{figure}[htb]
-\renewcommand{\algorithmicrequire}{\textbf{Inputs:}}
-\renewcommand{\algorithmicensure}{\textbf{Output:}}
-\renewcommand\thealgorithm{}
-\begin{algorithmic}[1]
-\REQUIRE {$A = (Q_A, \Sigma_A, \delta_A, q_A, F_A), B = (Q_B, \Sigma_B, \delta_B, q_B, F_B)$}
-\ENSURE {$C = (Q_C, \Sigma_C, \delta_C, q_C, F_C)$}
-
-\STATE{$q_C \gets (q_A, q_B)$}
-\STATE{$Q_C \gets \{q_C\}$}
-\STATE{$L \gets \{q_C\}$} \hfill\COMMENT{Work queue}
-\STATE{$P \gets \emptyset$} \hfill\COMMENT{Already-processed states}
-\WHILE{$L \neq \emptyset$}
-    \STATE{$s = (s_A, s_B) \gets \mathrm{dequeue}(L)$}
-    \STATE{$P \gets P \cup \{s\}$}
-    \FOR{$(s_A \xrightarrow{a} d_A \in \delta_A) \times (s_B \xrightarrow{b} d_B \in \delta_B)$}
-        \STATE{$d \gets (d_A, d_B)$}
-        \IF{$d \not\in P$}
-            \STATE{$L \gets L \cup \{d\}$}
-        \ENDIF
-        \STATE{$\delta_C(s, (a, b)) \gets d$} 
-        \IF{$d_A \in F_A \land d_B \in F_B$}
-            \STATE{$F_C \gets F_C \cup \{d\}$}
-        \ENDIF
-    \ENDFOR
-\ENDWHILE
-\end{algorithmic}
-\caption{Construction of the Cross Product FSM.  The inputs $A$ and $B$ must be deterministic;  the output $C$ is deterministic.}\label{fig:algo}
 \end{figure}
-Highlights of the algorithm are as follows:
-\begin{itemize}
-\item When $L$ is a queue, the algorithm performs a simultaneous breadth-first search of the input FSMs, using $L$ to hold combined states that still need to be processed. \item The algorithm is correct no matter the order in which unprocessed combined states are considered.  Thus, $L$ could be a set rather than a queue and the algorithm is still correct.
-\item
-$L$ is initialized with the combined state of the input machines' starting states.  
-\item When a combined state $(s_{A},s_{B})$ is taken from $L$, the transition functions of the input machines are consulted to find a possible successor state~$d$.  
-\item Combined state $d$ is then added to the work queue if it has not yet been processed.   
-\item The set $P$ keeps track of combined states that have been processed.
-\item From the above, it is clear that a combined state is placed on $L$ at most once.
-\item At line~13 of Figure~\ref{fig:algo}, the algorithm is modifying $\delta_C$ to add the transition
-\(s \xrightarrow{(a,b)} d\).
-This modification must make concomitant changes to $Q_C$ and $\Sigma_C$, potentially introducing the new state $d$ and new symbol $(a,b)$, respectively.
-\item The combined state $d$ is marked as an accepting state in FSM~$C$ if both of its components are accepting states.
-\end{itemize}
 
-Consider this algorithm applied to Figures~\ref{fig:nimHeapFSM} and \ref{fig:nimPlayerFSM}, with $L = \{(\text{Player A}, [5])\}$. 
-\begin{itemize}
-    \item Currently $s = (\text {Player A}, [5])$
-    \item $s$ is added to $P$ so that it will not be considered again for processing.
-    \item We consider the Cartesian product of transitions from state $\text{Player A}$ in the player machine and from state $[5]$ in the heap machine. 
-    \item This yields 
-\[
-        \text{Player A} \xrightarrow{B} \text{Player B} \\ \times [5] \xrightarrow{\text{Take } 1} [4]
-        \]
-        and
-        \[
-        \text{Player A} \xrightarrow{B} \text{Player B} \\ \times  [5] \xrightarrow{\text{Take } 2} [3]
-        \]
-    \item Consider $(\text{Player A} \xrightarrow{B} \text{Player B}, [5] \xrightarrow{\text{Take } 1} [4])$
-    \item The combined destination state is $(\text{Player B}, [4])\not\in P$.
-    \item It is therefore added to the work queue $L$. 
-    \item $(\text {Player A}, [5]) \xrightarrow{(B, \text{Take } 1)} (\text{Player B}, [4])$ is added to the cross-product machine's transition function.
-    \item State $(\text{Player B}, [4])$ is added to $Q_C$.
-    \item Token $(B, \text{Take } 1)$ is added to $\Sigma_C$.
-    \item Because $[4]$ is not an accepting state, $(\text{Player B}, [4])$ is not added to $F_C$. 
-\end{itemize}
-The next transition $(\text{Player A} \xrightarrow{B} \text{Player B}, [5] \xrightarrow{\text{Take } 2} [3])$ is processed similarly:
-\begin{itemize}
-    \item The combined destination state is $(\text{Player B}, [3])$. 
-    \item Because the combined destination state is not in $P$, it has not been processed yet, so it is added to $L$. 
-    \item Transition $(\text {Player A}, [5]) \xrightarrow{(B, \text{Take } 2)} (\text{Player B}, [3])$ is added to the cross-product machine's transition function.
-    \item State $(\text{Player B}, [3])$ is added to $Q_C$.
-    \item Token $(B, \text{Take } 2)$ is added $\Sigma_C$.
-    \item Because $[3]$ is not an accepting state, $(\text{Player B}, [3])$ is not added to $F_C$.  
-\end{itemize}
-
-% The algorithm begins by combining the two starting states and adding it to the work queue. It then proceeds by removing the first entry from the work queue, splitting it into its two component states, and iterates through all combinations of transitions from the component states within their respective machines. For each pair of transitions, their destination states are combined into a composite state, and is marked for later processing. Then, the cross product machine's transition function is augmented to include this transition, and the resulting state is marked as an accepting state if both component states are likewise accepting. 
 
 \section{Aspect-Oriented Finite-State Machine Library}\label{sec:foam}
 We have implemented an aspect-oriented finite-state machine library in Scala that we call Foam. Here we discuss the library as well as code generation.
@@ -504,7 +432,7 @@ Beyond the cache, it is tempting to extend this concept of feature-oriented hard
 %% The next two lines define the bibliography style to be used, and
 %% the bibliography file.
 %\clearpage
-\bibliographystyle{ACM-Reference-Format}
+\bibliographystyle{plain}
 \bibliography{acmart,bibdbase,networks}
 
 \end{document}
