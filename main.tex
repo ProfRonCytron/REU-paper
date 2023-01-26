@@ -68,7 +68,7 @@ Our approach offers significant leverage in supporting both the number and size 
 
 \section{Introduction}
 
-Project such as RocketChip~\cite{rocketchip} and ~\cite{risvmini} allow customization of RISC-V~\cite{riscv} processors that can then be deployed economically on FPGAs.  These resulting systems can offer better power and price performance than general-purpose processors while achieving a price point well below generation of an ASIC (application-specific integrated circuit).
+Projects such as RocketChip~\cite{chisel:riscv} and RISC-V~mini~\cite{Kim:22} allow customization of RISC-V~\cite{riscv} processors that can then be deployed economically on FPGAs.  These resulting systems can offer better power and price performance than general-purpose processors while achieving a price point well below generation of an ASIC (application-specific integrated circuit).
 
 While some portions of the RISC-V characterization are easily included or excluded at will, based on a given application's needs, components such as cache, branch-prediction circuitry, and superscalar support are much more difficult to weave in or excise from a given characterization.
 
@@ -76,7 +76,7 @@ In the RISC-V implementations cited above, components of the processor such as i
 
 In this paper, we consider several FSM controllers in which various features may or may not be present.  In a system with $n$ independent features, there are $2^n$ possible endpoint designs that could be generated.  Maintaining those as distinct projects is unwieldy and inefficient.  Instead, we use techniques from aspect-oriented programming to weave features into a design on demand.  The resulting code base is significantly smaller, while maintaining the ability to generate any endpoint on demand.   The resulting characterization must still go through synthesis, but the system in its feature-factored form is easier to maintain.  Moreover, testing of all feature combinations can be easily automated.
 
-We use two simple examples (the game of Nim and a vending machine) and then apply the techniques used in those designs to the construction of a feature-oriented cache.  That cache has been deployed and tested in RISC-V Mini~\cite{riscvmini}.
+We use two simple examples (the game of Nim and a vending machine) and then apply the techniques used in those designs to the construction of a feature-oriented cache.  That cache has been deployed and tested in RISC-V Mini~\cite{Kim:22}.
 
 The advent of hardware-generation languages like Chisel~\cite{chisel:article} has enabled the adoption of techniques and abstractions by hardware designers that were previously available only to software systems and their designers. As HTML describes the components, structure, and connections of a web page, so do hardware-characterization languages such as VHDL~\cite{vhdl} and Verilog~\cite{verilog} describe the components and interconnections of hardware circuit elements. While those languages provide some abstractions (such as arithmetic operations and restrictive macros), the paradigms and practices used widely in successful software engineering efforts are largely unavailable.
 
