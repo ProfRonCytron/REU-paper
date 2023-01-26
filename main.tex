@@ -44,6 +44,7 @@ St. Louis, MO, USA \\
 \{jdeters, peyton.gozon, c.max, cytron\}@wustl.edu}
 
 }
+\long\def\Cache#1{#1}
 
 \maketitle
 
@@ -55,7 +56,9 @@ Reconfigurable architectures enable the economical deployment of application-spe
 
 In this paper we consider a feature-oriented approach for specifying finite-state machines, which form the basis of cache controllers (and other components) for RISC-V implementations, and which are commonly found in hardware designs. Using a library we constructed for Chisel, developers can apply features at will, with the resulting machine containing only the circuitry needed to support the desired features.  
 
-Our library offers two constructs for building features. The first, inspired by aspect-oriented programming, applies incremental changes to the states and edges of a finite-state machine to alter and customize its behavior in response to features of interest.  The second construct couples the behavior of separate finite machines into a single machine that processes its inputs simultaneously.  We illustrate each construct separately using a vending machine and the game of Nim, respectively.  We then apply the constructs in concert to generate a coherent, 2-way multiprocessor cache from a much simpler specification.
+Our library offers two constructs for building features. The first, inspired by aspect-oriented programming, applies incremental changes to the states and edges of a finite-state machine to alter and customize its behavior in response to features of interest.  The second construct couples the behavior of separate finite machines into a single machine that processes its inputs simultaneously.  We illustrate each construct separately using a vending machine and the game of Nim, respectively.
+%%
+\Cache{We then apply the constructs in concert to generate a coherent, 2-way multiprocessor cache from a much simpler specification.}
 
 Our approach offers significant leverage in supporting both the number and size of the generated designs.  We present results from synthesis that show the size of the design endpoints compared with the much smaller size of their specification.
 \end{abstract}
