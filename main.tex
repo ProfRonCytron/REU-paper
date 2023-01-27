@@ -159,7 +159,7 @@ In terms of leverage, consider an FSM for which there are $n$ orthogonal and ind
 
 \begin{figure}
     \centering
-    \includegraphics[width=0.55\linewidth]{figures/VendingMachine.pdf}
+    \includegraphics[width=0.45\linewidth]{figures/VendingMachine.pdf}
     \caption{Dependencies between vending machine features.}
     \label{fig:vmDependencies}
 \end{figure}
@@ -168,7 +168,7 @@ In terms of leverage, consider an FSM for which there are $n$ orthogonal and ind
 
 Nim~\cite{enwiki:1102668015} is a broad class of impartial mathematical strategy games, which traditionally involve multiple heaps of tokens (\emph{e.g.}, sticks) and two or more alternating players. The current player removes an allowable number of sticks from a subset of the heaps. The winner is usually defined as the player taking the last token. In a \emph{mis\`{e}re} version of the game, that player would lose.
 
-In contrast with the usual monolithic solution, even the most basic game of Nim can be regarded as the composition or simultaneous operation of two simpler machines:   one that represents only the allowable subtractions of tokens in a heap (such as the 5-token heap shown in Figure~\ref{fig:nimHeapFSM}) and one that represents only the alternation of players (such as the two-player alternation shown in Figure~\ref{fig:nimPlayerFSM}).  Transitions not shown in those machines are errors, such as Player~A taking two consecutive turns.  Using a construction technique due to Harel~\cite{HAREL1987231} and well documented in Ptolomy~\cite{EdwardLee}, we obtain the basic game of Nim shown in Figure~\ref{fig:nimFSM}.  That algorithm simulates the simultaneous, lock-step execution of the machines shown in Figures~\ref{fig:nimHeapFSM} and~\ref{fig:nimPlayerFSM}.
+In contrast with the usual monolithic solution, even the most basic game of Nim can be regarded as the composition or simultaneous operation of two simpler machines:   one that represents only the allowable subtractions of tokens in a heap (such as the 5-token heap shown in Figure~\ref{fig:nimHeapFSM}) and one that represents only the alternation of players (such as the two-player alternation shown in Figure~\ref{fig:nimPlayerFSM}).  Transitions not shown in those machines are errors, such as Player~A taking two consecutive turns.  
 
 Following is our feature decomposition of Nim:
 \begin{description}[\IEEEsetlabelwidth{Num Players}]
@@ -181,7 +181,7 @@ The dependencies of these features is shown in Figure~\ref{fig:nimDependencies}.
 
 \begin{figure}
     \centering
-    \includegraphics[width=0.6\linewidth]{figures/NimFeatures.pdf}
+    \includegraphics[width=0.4\linewidth]{figures/NimFeatures.pdf}
     \caption{Dependencies between Nim features.}
     \label{fig:nimDependencies}
 \end{figure}
@@ -210,9 +210,9 @@ The game is won when both conditions are met:
     \label{fig:nimPlayerFSM}
 \end{figure}
 
-In support of the semantic actions occurring as they should, and requiring inputs of the same length, we use the construction of Harel~\cite{HAREL1987231} to build a particular \emph{cross product} of two FSMs.  For our example here, the resulting FSM is shown in Figure~\ref{fig:nimFSM}, which makes moves with the proper timing and appropriately distinguishes a win by~A from a win by~B.
+Using a construction technique due to Harel~\cite{HAREL1987231} and well documented in Ptolomy~\cite{EdwardLee}, we obtain the basic game of Nim shown in Figure~\ref{fig:nimFSM}.  That algorithm simulates the simultaneous, lock-step execution of the machines shown in Figures~\ref{fig:nimHeapFSM} and~\ref{fig:nimPlayerFSM}.
 
-In terms of leverage, consider the cross-product generation of an FSM from two identical FSMs each of size $m$ (states+transitions).  For example, we generate a 2-heap version of Nim by taking the cross product of two such FSMs, as described in Section~\ref{sec:cpalg}.  The resulting machine is of size $O(m^{2})$.  An $n$-way cross product generates a machine of size $O(m^{n})$, where $m$ is viewed as a constant here.  The structures we can generate with this approach are (in the limit) exponential in the size of their specifications.
+In terms of leverage, consider the cross-product generation of an FSM from two identical FSMs each of size $m$ (states+transitions).  The resulting machine's worst-case size is~$O(m^{2})$.  An $n$-way cross product generates a machine of size $O(m^{n})$, where $m$ is viewed as a constant here.  The structures we can generate with this approach are (in the limit) exponential in the size of their specifications.
 
 \begin{figure}
     \centering
@@ -389,14 +389,14 @@ Suppose that we wanted to model a similar cache system ourselves, but instead of
 
 \begin{figure}
     \centering
-    \includegraphics[width=0.7\linewidth]{figures/cacheFSM.pdf}
+    \includegraphics[width=0.5\linewidth]{figures/cacheFSM.pdf}
     \caption{The cache FSM from the RISC-V Mini.}
     \label{fig:cacheBefore}
 \end{figure}
 
 \begin{figure}
     \centering
-    \includegraphics[width=1.0\linewidth]{figures/cacheFSM2.pdf}
+    \includegraphics[width=0.6\linewidth]{figures/cacheFSM2.pdf}
     \caption{The cache FSM from RISC-V Mini with the MSI protocol.}
     \label{fig:cacheAfter}
 \end{figure}
