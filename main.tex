@@ -83,10 +83,16 @@ Chisel has proven itself robust in pedagogy and industry, serving as the basis f
 In this paper, we consider a feature-oriented programming (FOP) approach to generating hardware, specifically \emph{finite-state machines} (FSMs).   Our contributions are as follows:
 \begin{itemize}
     \item In Section~\ref{sec:vend}, we describe an approach to formulating features in FSMs based on aspect-oriented programming (AOP).  We apply this idea to a featureful vending machine in Section~\ref{sec:ccut} and present results on the automatically generated FSMs with specific feature sets in Section~\ref{sec:vendresults}.
-    \item In Section~\ref{sec:nim} we describe a generative approach to composing larger FSMs from smaller, behavior-specific machines, illustrated using the game of Nim.  Results from its application to variations of Nim are shown in Section~\ref{sec:nimresults}.
-    \item We combine both of the above ideas in Section~\ref{sec:cache} to the generation of an SIMD cache, similar to one currently in use by~AMD.  The parallelism of the cache is generated via the cross-product technique and a coherence scheme is imposed as a feature using the AOP technique.
-    \item Theoretically, Sections~\ref{sec:vend} and~\ref{sec:nim} show that a specification of size $O(n)$ can (in the limit) generate variations or structures of size~$O(2^{n})$.  Our results in Section~\ref{sec:results} confirm empirically that our approach offers significant leverage toward generating large, complex FSMs from relatively smaller and simpler ones. 
+    \item In Section~\ref{sec:nim} we describe a generative \emph{cross-product} technique (due to Harel~\cite{HAREL1987231}) that composes larger FSMs from smaller, behavior-specific machines, illustrated using the game of Nim.  Results from its application to variations of Nim are shown in Section~\ref{sec:nimresults}.
+    \Cache{
+    \item We combine both of the above ideas in Section~\ref{sec:cache} to the generation of an SIMD cache, similar to one currently in use by~AMD.  The parallelism of the cache is generated via the cross-product technique and a coherence scheme is imposed as a feature using the AOP technique.}
+    \item We present results in Section~\ref{sec:results} that show our approach's significant leverage toward generating large, complex FSMs from relatively smaller and simpler ones. 
     \item The code we have developed for this work integrates with Chisel and is available via \texttt{github}.
+\end{itemize}
+The FSMs generated using our approach enjoy benefits similar to feature-oriented software systems:
+\begin{itemize}
+    \item Smaller footprints are obtained by including only those features of interest.  The resulting hardware designs have fewer states and less logic, supporting only the features of interest.
+    \item Logic related to inactive features is completely absent from the resulting designs. Since the clock rate of a hardware system is determined in part by the amount of logic that must complete in a clock cycle, less logic could lead to faster clock rates.
 \end{itemize}
 
 
@@ -95,18 +101,7 @@ In this paper, we consider a feature-oriented programming (FOP) approach to gene
 We review here the concepts and prior work upon which our work is based.
 \subsection{Aspect-oriented programming}
 
-Our work builds on a programming paradigm available in the software community that efficiently supports the expression and application of \emph{cross-cutting} concerns in a software system.  Aspect-Oriented Programming~(AOP)~\cite{gregor:97} and its realization in systems such as AspectJ~\cite{aspectj} allow developers to express ideas that affect multiple components of a system in support of a common idea or feature. A commonly cited example is the implementation of pervasive logging: every method, when called and prior to returning, should log those events to some output stream. Absent an AOP approach, a developer is faced with the following difficulties:
-\begin{itemize}
-    \item Implementation of the feature requires modifying every method at its entry and every possible exit so that it issues the proper log messages.  This is both tedious and error-prone, especially if methods can exit due to unforeseen actions such as exceptions.
-    \item Removing the feature, should it no longer be needed, is also tedious and error-prone.
-    \item Placing the feature under some kind of conditional execution offers some relief, but
-    \begin{itemize}
-        \item The conditions themselves incur execution time and the logging code occupies code space.
-        \item Subsequent modifications to the system must be mindful to include the appropriate logging actions.
-    \end{itemize}
-\end{itemize}
-%Macro processors can achieve the proper effect, namely including the code only when it is desired.  However, it is still incumbent on developers to remember to call the macros at the proper points in a program.
-AOP offers an efficient and clean solution to this and similar problems, because a developer can specify via aspects that at \emph{every} method entry and exit (other than the method that does the logging), a segment of code should be inserted to accomplish the appropriate logging.  If the logging is no longer desired, the associated aspect is simply omitted when building the system.  In this way, both originally and upon modification, all methods' entries and exits are properly logged.
+Our work builds on a programming paradigm available in the software community that efficiently supports the expression and application of \emph{cross-cutting} concerns in a software system.  Aspect-Oriented Programming~(AOP)~\cite{gregor:97} and its realization in systems such as AspectJ~\cite{aspectj} allow developers to express ideas that affect multiple components of a system in support of a common idea or feature. 
 
 Aspects have been applied to finite-state machines for sequence diagrams in a modeling (UML) setting~\cite{aspectsUML}.  Our use of aspects extends that work by taking advantage of types in Scala to formulate advice and guide FSM modifications. 
 
@@ -118,16 +113,6 @@ This approach has also been attractive for managing product lines in which featu
 
 An example from the software world of the benefits obtainable from an FOP approach to a featureful system concerns the CORBA~\cite{CORBA:00} Event Channel~\cite{CORBAService:02a}. The standard implementation is \emph{monolithic}, offering all possible features in all allowable combinations.  A decomposition of the Event Channel in terms of its features has demonstrated that useful subsets of those features use significantly fewer resources when formulated generatively~\cite{Pratap:04}.   
 
-We show in this work that the FSMs generated using our approach enjoy analogous benefits seen in the above software systems:
-\begin{itemize}
-    \item Smaller footprints are obtained by including only those features of interest.  The resulting hardware designs have fewer states and less logic, supporting only the features of interest.
-    \item Logic related to inactive features is completely absent from the resulting designs. Since the clock rate of a hardware system is determined in part by the amount of logic that must complete in a clock cycle, less logic could lead to faster clock rates.
-\end{itemize}
-
-  
-\subsection{Decidability}\label{sec:decide}
-
-The theory of regular languages and finite-state machines allows that questions related to properties of the behavior of such machines have definite and algorithmically obtained answers~\cite{sipser}. For example, consider a feature that is intended to \emph{extend} the behavior of a design, so that all previous inputs are allowed, but the feature introduces some other allowable inputs; such as an FSM that scans characters to parse them as decimal numerals.  A feature might extend that syntax to accommodate hexadecimal numerals for inputs that begin with \texttt{0x}.  With our approach, the introduced feature creates a new FSM, whose language is provably a proper superset of the original FSM's language.  As another example, \emph{timed automata}~\cite{10.1145/2518102} could reason about real-time properties of finite-state machines generated by our approach.   
 
 \section{Generative FSM specifications}
 
