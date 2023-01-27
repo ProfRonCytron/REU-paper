@@ -168,7 +168,7 @@ In terms of leverage, consider an FSM for which there are $n$ orthogonal and ind
 
 Nim~\cite{enwiki:1102668015} is a broad class of impartial mathematical strategy games, which traditionally involve multiple heaps of tokens (\emph{e.g.}, sticks) and two or more alternating players. The current player removes an allowable number of sticks from a subset of the heaps. The winner is usually defined as the player taking the last token. In a \emph{mis\`{e}re} version of the game, that player would lose.
 
-In contrast with the usual monolithic solution, even the most basic game of Nim can be regarded as the composition or simultaneous operation of two simpler machines:   one that represents only the allowable subtractions of tokens in a heap (such as the 5-token heap shown in Figure~\ref{fig:nimHeapFSM}) and one that represents only the alternation of players (such as the two-player alternation shown in Figure~\ref{fig:nimPlayerFSM}).  Transitions not shown in those machines are errors, such as Player~A taking two consecutive turns.  
+In contrast with the usual monolithic solution, even the most basic game of Nim can be regarded as the composition or simultaneous operation of two simpler machines:   one that represents only the allowable subtractions of tokens in a heap (such as the 5-token heap shown in Figure~\ref{fig:nimHeapFSM}(a)) and one that represents only the alternation of players (such as the two-player alternation shown in Figure~\ref{fig:nimHeapFSM}(b)).  Transitions not shown in those machines are errors, such as Player~A taking two consecutive turns.  
 
 Following is our feature decomposition of Nim:
 \begin{description}[\IEEEsetlabelwidth{Num Players}]
@@ -189,28 +189,26 @@ The dependencies of these features is shown in Figure~\ref{fig:nimDependencies}.
 
 The game is won when both conditions are met:
 \begin{itemize}
-    \item Players alternate correctly, as in Figure~\ref{fig:nimPlayerFSM}.  For example, the sequence ABA leads to an accept, but the sequence AAB cannot.
-    \item All tokens have been taken, for example using the sequence 212 in Figure~\ref{fig:nimHeapFSM}.
+    \item Players alternate correctly, as in Figure~\ref{fig:nimHeapFSM}(b).  For example, the sequence ABA leads to an accept, but the sequence AAB cannot.
+    \item All tokens have been taken, for example using the sequence 212 in Figure~\ref{fig:nimHeapFSM}(a).
 \end{itemize}
 % Formally, in the theory of regular languages, acceptable inputs for our problem are in the \emph{concatenation} of the languages of these two machines.   Given the sequence ABA and 212, each accepted by its respective machine, the concatenation ABA212 is a string in the concatenation of the two languages.  While this correctly represents the sequence of inputs that causes somebody to win, the timing of actions associated with transitions in the two machines does not coincide properly.  For example, it is not possible in the concatenation to determine \emph{who} won the game when the second machine moves to its accepting states, where zero tokens remain. 
 
 \begin{figure}
     \centering
-    \includegraphics[width=0.3\linewidth]{figures/nimexample/heapFSM.pdf}
-    \caption{FSM for a 5-token heap that allows one or two tokens to be removed in a turn.}
+    \begin{tabular}{cc}
+    \includegraphics[width=0.3\linewidth]{figures/nimexample/heapFSM.pdf} &
+    \includegraphics[width=0.3\linewidth]{figures/nimexample/playerFSM.pdf} \\
+    (a) & (b)
+    \end{tabular}
+    \caption{(a) FSM for a 5-token heap that allows one or two tokens to be removed in a turn; (b) FSM specifying alternation of Players~A and~B.}
     \label{fig:nimHeapFSM} 
 \end{figure}
 
 % We prefer to process the inputs more naturally as (A,2), (B,1), and (A,2), so that the player making the move and the number of subtracted tokens are processed in lock-step.  In this way, any actions associated with each move will be properly taken upon that move.  Similarly, if the game had 3~heaps in play instead of a single heap, we want all heaps to be appropriately modified by each turn.  Concatenation would focus on one heap until it is exhausted before moving to the next heap.   Finally, consider that the first machine accepts~ABAB which would be inappropriate if the second machine accepts~212, since only~3 moves are made.  The lock-step execution we require is over \emph{same-length} inputs for each machine.
 
-\begin{figure}
-    \centering
-    \includegraphics[width=0.2\linewidth]{figures/nimexample/playerFSM.pdf}
-    \caption{FSM specifying alternation of Players~A and~B.}
-    \label{fig:nimPlayerFSM}
-\end{figure}
 
-Using a construction technique due to Harel~\cite{HAREL1987231} and well documented in Ptolomy~\cite{EdwardLee}, we obtain the basic game of Nim shown in Figure~\ref{fig:nimFSM}.  That algorithm simulates the simultaneous, lock-step execution of the machines shown in Figures~\ref{fig:nimHeapFSM} and~\ref{fig:nimPlayerFSM}.
+Using a construction technique due to Harel~\cite{HAREL1987231} and well documented in Ptolomy~\cite{EdwardLee}, we obtain the basic game of Nim shown in Figure~\ref{fig:nimFSM}.  That algorithm simulates the simultaneous, lock-step execution of the machines shown in Figures~\ref{fig:nimHeapFSM}(a) and~(b).
 
 In terms of leverage, consider the cross-product generation of an FSM from two identical FSMs each of size $m$ (states+transitions).  The resulting machine's worst-case size is~$O(m^{2})$.  An $n$-way cross product generates a machine of size $O(m^{n})$, where $m$ is viewed as a constant here.  The structures we can generate with this approach are (in the limit) exponential in the size of their specifications.
 
@@ -284,7 +282,7 @@ In these cases the number of states increase by 2.5x in the simplest endpoint up
 
 Despite the growing number of generated states and transitions as the features increase in Figure~\ref{fig:vmData}, the resulting hardware resources, in this case Look Up Tables (LUTs), used by the FSM are relatively modest. This is because hardware synthesis tools can represent states using a linear encoding scheme.  For an FSM with $n$ states, each state takes only $O(\log{n})$ space when encoded as an integer.  However, the \emph{specification} of that circuit to a synthesis tool must be expressed state-by-state.  If the number of transitions per state is bounded by a constant, then the specification (\textit{e.g.}, lines of Verilog) takes $O(n)$ space.  Our generative approach to hardware FSMs opens hardware designers to implementing much larger FSMs than are currently sustainable with a hand-coded approach.
 
-\begin{figure}
+\begin{figure}\small
     \centering
 \begin{tabular}{lrrrr}\toprule
 Features &States &Transitions &LUTs \\\midrule
@@ -313,8 +311,7 @@ The classical game of Nim contains two players and three heaps, though there are
 
 Figure~\ref{tab:traditionalNim} shows the results for different endpoints of the traditional game of Nim, varying both the quantity of heaps, the number of sticks within each heap, and the number of players. In the simplest variation, containing only a single heap with three sticks and one player, a total of six states and 30 transitions were generated. Juxtapose this with the most complex variation, containing three heaps -- with three, four, and five sticks, respectively -- and four players: this variation contains 419 states and 20950 transitions. With minimal changes to the specification of the game, this represents a nearly 70x increase in the number of states and 698x increase in the number of transitions. For a fixed number of players, the number of transitions experiences growth by an order of magnitude moving from 3 to 4 to 5 heaps. 
 
-\begin{figure}
-\small
+\begin{figure}\small
 \begin{tabular}{rrrrrrr}\toprule
 \multicolumn{3}{c}{Heaps} &Players &States &Transitions \\\cmidrule{1-6}
 3 &4 &5 & & & \\\midrule
