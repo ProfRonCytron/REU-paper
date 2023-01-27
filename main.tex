@@ -167,15 +167,14 @@ In terms of leverage, consider an FSM for which there are $n$ orthogonal and ind
 \subsection{Generating FSMs via cross-product composition}\label{sec:nim}
 
 Nim~\cite{enwiki:1102668015} is a broad class of impartial mathematical strategy games, which traditionally involve multiple heaps of tokens (\emph{e.g.}, sticks) and two or more alternating players. The current player removes an allowable number of sticks from a subset of the heaps. The winner is usually defined as the player taking the last token. In a \emph{mis\`{e}re} version of the game, that player would lose.
-While we initially approached this game with the ideas in Section~\ref{sec:vend}, states in this game represent the number of tokens present in each heap and the current player's turn.  Aspectual features should be additive, expanding the behavior of their targets, and while cross-cutting, they do not typically completely rewrite their targets.  With Nim, the machine is changed throughout by the addition of an additional player or heap.   
 
-However, we realized that construction of even the most basic game of Nim can be regarded as the composition or simultaneous operation of two simpler machines:   one that represents only the allowable subtractions of tokens in a heap (such as the 5-token heap shown in Figure~\ref{fig:nimHeapFSM}) and one that represents only the alternation of players (such as the two-player alternation shown in Figure~\ref{fig:nimPlayerFSM}).  Transitions not shown in those machines are errors, such as Player~A taking two consecutive turns.  Using a construction technique due to Harel~\cite{HAREL1987231} and well documented in Ptolomy~\cite{EdwardLee}, we obtain the basic game of Nim shown in Figure~\ref{fig:nimFSM}.  That algorithm simulates the simultaneous, lock-step execution of the machines shown in Figures~\ref{fig:nimHeapFSM} and~\ref{fig:nimPlayerFSM}.
+In contrast with the usual monolithic solution, even the most basic game of Nim can be regarded as the composition or simultaneous operation of two simpler machines:   one that represents only the allowable subtractions of tokens in a heap (such as the 5-token heap shown in Figure~\ref{fig:nimHeapFSM}) and one that represents only the alternation of players (such as the two-player alternation shown in Figure~\ref{fig:nimPlayerFSM}).  Transitions not shown in those machines are errors, such as Player~A taking two consecutive turns.  Using a construction technique due to Harel~\cite{HAREL1987231} and well documented in Ptolomy~\cite{EdwardLee}, we obtain the basic game of Nim shown in Figure~\ref{fig:nimFSM}.  That algorithm simulates the simultaneous, lock-step execution of the machines shown in Figures~\ref{fig:nimHeapFSM} and~\ref{fig:nimPlayerFSM}.
 
 Following is our feature decomposition of Nim:
-\begin{description}[\IEEEsetlabelwidth{Number of Players}]
+\begin{description}[\IEEEsetlabelwidth{Num Players}]
     \item[Heap Bounds] encodes the initial and winning number of tokens for each heap.
     \item[Legal Moves] encodes permissible combinations of adding or removing tokens from each heap.
-    \item[Number of Players] specifies how many players take turns in the game.
+    \item[Num Players] specifies how many players take turns in the game.
     \item[Win Type] specifies whether the game is mis\`{e}re play or normal play.
 \end{description}
 The dependencies of these features is shown in Figure~\ref{fig:nimDependencies}.  
@@ -193,7 +192,7 @@ The game is won when both conditions are met:
     \item Players alternate correctly, as in Figure~\ref{fig:nimPlayerFSM}.  For example, the sequence ABA leads to an accept, but the sequence AAB cannot.
     \item All tokens have been taken, for example using the sequence 212 in Figure~\ref{fig:nimHeapFSM}.
 \end{itemize}
-Formally, in the theory of regular languages, acceptable inputs for our problem are in the \emph{concatenation} of the languages of these two machines.   Given the sequence ABA and 212, each accepted by its respective machine, the concatenation ABA212 is a string in the concatenation of the two languages.  While this correctly represents the sequence of inputs that causes somebody to win, the timing of actions associated with transitions in the two machines does not coincide properly.  For example, it is not possible in the concatenation to determine \emph{who} won the game when the second machine moves to its accepting states, where zero tokens remain. 
+% Formally, in the theory of regular languages, acceptable inputs for our problem are in the \emph{concatenation} of the languages of these two machines.   Given the sequence ABA and 212, each accepted by its respective machine, the concatenation ABA212 is a string in the concatenation of the two languages.  While this correctly represents the sequence of inputs that causes somebody to win, the timing of actions associated with transitions in the two machines does not coincide properly.  For example, it is not possible in the concatenation to determine \emph{who} won the game when the second machine moves to its accepting states, where zero tokens remain. 
 
 \begin{figure}
     \centering
@@ -202,7 +201,7 @@ Formally, in the theory of regular languages, acceptable inputs for our problem 
     \label{fig:nimHeapFSM} 
 \end{figure}
 
-We prefer to process the inputs more naturally as (A,2), (B,1), and (A,2), so that the player making the move and the number of subtracted tokens are processed in lock-step.  In this way, any actions associated with each move will be properly taken upon that move.  Similarly, if the game had 3~heaps in play instead of a single heap, we want all heaps to be appropriately modified by each turn.  Concatenation would focus on one heap until it is exhausted before moving to the next heap.   Finally, consider that the first machine accepts~ABAB which would be inappropriate if the second machine accepts~212, since only~3 moves are made.  The lock-step execution we require is over \emph{same-length} inputs for each machine.
+% We prefer to process the inputs more naturally as (A,2), (B,1), and (A,2), so that the player making the move and the number of subtracted tokens are processed in lock-step.  In this way, any actions associated with each move will be properly taken upon that move.  Similarly, if the game had 3~heaps in play instead of a single heap, we want all heaps to be appropriately modified by each turn.  Concatenation would focus on one heap until it is exhausted before moving to the next heap.   Finally, consider that the first machine accepts~ABAB which would be inappropriate if the second machine accepts~212, since only~3 moves are made.  The lock-step execution we require is over \emph{same-length} inputs for each machine.
 
 \begin{figure}
     \centering
@@ -211,7 +210,7 @@ We prefer to process the inputs more naturally as (A,2), (B,1), and (A,2), so th
     \label{fig:nimPlayerFSM}
 \end{figure}
 
-In support of the semantic actions occurring as they should, and requiring inputs of the same length, we present in Section~\ref{sec:cpalg} an algorithm for constructing a particular \emph{cross product} of two FSMs.  For our example here, the resulting FSM is shown in Figure~\ref{fig:nimFSM}, which makes moves with the proper timing and appropriately distinguishes a win by~A from a win by~B.
+In support of the semantic actions occurring as they should, and requiring inputs of the same length, we use the construction of Harel~\cite{HAREL1987231} to build a particular \emph{cross product} of two FSMs.  For our example here, the resulting FSM is shown in Figure~\ref{fig:nimFSM}, which makes moves with the proper timing and appropriately distinguishes a win by~A from a win by~B.
 
 In terms of leverage, consider the cross-product generation of an FSM from two identical FSMs each of size $m$ (states+transitions).  For example, we generate a 2-heap version of Nim by taking the cross product of two such FSMs, as described in Section~\ref{sec:cpalg}.  The resulting machine is of size $O(m^{2})$.  An $n$-way cross product generates a machine of size $O(m^{n})$, where $m$ is viewed as a constant here.  The structures we can generate with this approach are (in the limit) exponential in the size of their specifications.
 
