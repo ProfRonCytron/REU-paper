@@ -152,14 +152,14 @@ In terms of leverage, consider an FSM for which there are $n$ orthogonal and ind
 
 \begin{figure*}
     \centering
-    \includegraphics[width=0.7\textwidth]{figures/vend1.pdf}
+    \includegraphics[width=0.5\textwidth]{figures/vend1.pdf}
     \caption{FSM for a vending machine that accepts 5 cent coins and dispenses peanuts that cost 10 cents.}
     \label{fig:vend1}
 \end{figure*}
 
 \begin{figure}
     \centering
-    \includegraphics[width=0.45\linewidth]{figures/VendingMachine.pdf}
+    \includegraphics[width=0.4\linewidth]{figures/VendingMachine.pdf}
     \caption{Dependencies between vending machine features.}
     \label{fig:vmDependencies}
 \end{figure}
@@ -258,7 +258,7 @@ We have implemented an aspect-oriented finite-state machine library in Scala tha
 
 While Foam is not realized as a domain-specific language, we have modeled the interface after the well-established aspect-oriented extension to Java, AspectJ~\cite{aspectj}. The intention is to provide aspect-oriented practitioners a familiar interface for interacting with the FSMs. Because the library is implemented in ordinary Scala, we have access to and can utilize the full power of its type system. 
 
-We provide a series of extendable base classes to represent FSMs. The library builds pointcuts, applies aspects, and performs the cross-product construction described in Figure~\ref{fig:algo}. Like AspectJ, our library provides access via reflection to a join point and its context.  For the examples presented here, the library allows efficient and clear expression of features.  Figure~\ref{lst:PrintFunds} shows the implementation of the \textbf{Print Funds} feature in Foam for the FSM vending machine.
+We provide a series of extendable base classes to represent FSMs. The library builds pointcuts, applies aspects, and performs the cross-product construction. Like AspectJ, our library provides access via reflection to a join point and its context.  For the examples presented here, the library allows efficient and clear expression of features.  Figure~\ref{lst:PrintFunds} shows the implementation of the \textbf{Print Funds} feature in Foam for the FSM vending machine.
 
 \begin{figure*}
     \centering
@@ -304,14 +304,14 @@ PICWB &124 &1353 &220 \\
 
 \subsection{Nim}\label{sec:nimresults}
 
-We implemented all the features described in Section~\ref{sec:nim} and studied three variations of Nim: traditional Nim, the subtraction game, and circle Nim. All results assume each game is mis\`{e}re play with at least one heap and one player. We further assume that the players alternate in a round-robin fashion. The details of each variation are described below, along with the number of generated states and transitions within the created FSMs. 
+We implemented all the features described in Section~\ref{sec:nim} and studied these variations of Nim: traditional Nim and circle Nim. All results assume each game is mis\`{e}re play with at least one heap and one player. We further assume that the players alternate in a round-robin fashion. The details of each variation are described below, along with the number of generated states and transitions within the created FSMs. 
 
 \paragraph{Traditional Nim}
 The classical game of Nim contains two players and three heaps, though there are no restrictions on the number of players or quantity of heaps. The defining characteristic of traditional Nim is that, each turn, the current player may only remove sticks from a single heap of their choosing, and must take between 1 and all the remaining sticks within that heap. The game ends when all heaps contain zero sticks. 
 
 Figure~\ref{tab:traditionalNim} shows the results for different endpoints of the traditional game of Nim, varying both the quantity of heaps, the number of sticks within each heap, and the number of players. In the simplest variation, containing only a single heap with three sticks and one player, a total of six states and 30 transitions were generated. Juxtapose this with the most complex variation, containing three heaps -- with three, four, and five sticks, respectively -- and four players: this variation contains 419 states and 20950 transitions. With minimal changes to the specification of the game, this represents a nearly 70x increase in the number of states and 698x increase in the number of transitions. For a fixed number of players, the number of transitions experiences growth by an order of magnitude moving from 3 to 4 to 5 heaps. 
 
-\begin{figure}\small
+\begin{figure}\small\centering
 \begin{tabular}{rrrrrrr}\toprule
 \multicolumn{3}{c}{Heaps} &Players &States &Transitions \\\cmidrule{1-6}
 3 &4 &5 & & & \\\midrule
@@ -329,30 +329,30 @@ Figure~\ref{tab:traditionalNim} shows the results for different endpoints of the
 \caption{Number of generated states and transitions by selected features for traditional Nim.}\label{tab:traditionalNim}
 \end{figure}
 
-\paragraph{The Subtraction Game}
-This game is a single-heap variation of Nim, usually played by a small group of players. In our analysis, we fix the starting number of sticks to 21 each game. Each turn, the current player removes between one and a set number of sticks from the heap, with the game ending when the final stick is removed. 
+% \paragraph{The Subtraction Game}
+% This game is a single-heap variation of Nim, usually played by a small group of players. In our analysis, we fix the starting number of sticks to 21 each game. Each turn, the current player removes between one and a set number of sticks from the heap, with the game ending when the final stick is removed. 
 
-Figure~\ref{tab:subtractionNim} shows the results for different endpoints of the subtraction game, varying the number of sticks permissible to take each turn and the number of players. In the simplest variation, with there only being one player allowed to take one stick each turn, the resulting FSM contains 24 states and 72 transitions. By comparison, the most complex variation considered has four players and allows the player to take 1, 2, or 3 sticks each turn, with the corresponding FSM having 83 states and 1162 transitions. This marks an almost 3.5x increase in the number of states and 16x increase in the number of transitions. Empirically, the primary driver for complexity in these variations is increasing the number of heaps, which the subtraction game lacks; however, the ability to generate such a breadth of variations for a single game type with minimal code changes is a huge lever. 
+% Figure~\ref{tab:subtractionNim} shows the results for different endpoints of the subtraction game, varying the number of sticks permissible to take each turn and the number of players. In the simplest variation, with there only being one player allowed to take one stick each turn, the resulting FSM contains 24 states and 72 transitions. By comparison, the most complex variation considered has four players and allows the player to take 1, 2, or 3 sticks each turn, with the corresponding FSM having 83 states and 1162 transitions. This marks an almost 3.5x increase in the number of states and 16x increase in the number of transitions. Empirically, the primary driver for complexity in these variations is increasing the number of heaps, which the subtraction game lacks; however, the ability to generate such a breadth of variations for a single game type with minimal code changes is a huge lever. 
 
-\begin{figure}
-\small
-\begin{tabular}{cccrrrr}\toprule
-\multicolumn{3}{c}{Allowed} & & & & \\
-\multicolumn{3}{c}{Moves} &Players &States &Transitions \\\cmidrule{1-6}
--1 &-2 &-3 & & & \\\midrule
-\checkmark & & &1 &24 &72 \\
-\checkmark & & &2 &24 &96 \\
-\checkmark & & &4 &24 &144 \\
-\checkmark &\checkmark & &1 &24 &96 \\
-\checkmark &\checkmark & &2 &45 &270 \\
-\checkmark &\checkmark & &4 &81 &810 \\
-\checkmark &\checkmark &\checkmark &1 &24 &120 \\
-\checkmark &\checkmark &\checkmark &2 &45 &360 \\
-\checkmark &\checkmark &\checkmark &4 &83 &1162 \\
-\bottomrule
-\end{tabular}
-\caption{Number of generated states and transitions by selected features for the Subtraction game. Every game is played with a single starting heap of 21 sticks.}\label{tab:subtractionNim}
-\end{figure}
+% \begin{figure}
+% \small\centering
+% \begin{tabular}{cccrrrr}\toprule
+% \multicolumn{3}{c}{Allowed} & & & & \\
+% \multicolumn{3}{c}{Moves} &Players &States &Transitions \\\cmidrule{1-6}
+% -1 &-2 &-3 & & & \\\midrule
+% \checkmark & & &1 &24 &72 \\
+% \checkmark & & &2 &24 &96 \\
+% \checkmark & & &4 &24 &144 \\
+% \checkmark &\checkmark & &1 &24 &96 \\
+% \checkmark &\checkmark & &2 &45 &270 \\
+% \checkmark &\checkmark & &4 &81 &810 \\
+% \checkmark &\checkmark &\checkmark &1 &24 &120 \\
+% \checkmark &\checkmark &\checkmark &2 &45 &360 \\
+% \checkmark &\checkmark &\checkmark &4 &83 &1162 \\
+% \bottomrule
+% \end{tabular}
+% \caption{Number of generated states and transitions by selected features for the Subtraction game. Every game is played with a single starting heap of 21 sticks.}\label{tab:subtractionNim}
+% \end{figure}
 
 \paragraph{Circle Nim}
 Circle Nim is given its name due to the layout of its heaps: the heaps are placed around a circle, with their adjacencies affecting gameplay. It is traditionally played with a finite number of heaps, each containing a single stick, and two players. Each turn, the current player is allowed to take the sticks from between one and a pre-set number of consecutive heaps. We allow the player to take from between one and three consecutive heaps. 
@@ -360,7 +360,7 @@ Circle Nim is given its name due to the layout of its heaps: the heaps are place
 Figure~\ref{tab:circleNim} shows the results for different endpoints of circle Nim, varying both the number of players and the number of heaps. In the simplest variation, with three heaps and a single player, 10 states and 110 transitions are generated. In the most complex variation, with nine heaps and four players, 1429 states and 157190 transitions are generated, representing a 143x and 1420x increase, respectively. Only two numbers were changed in code to realize this exponential increase in output complexity. 
 
 \begin{figure}
-\small
+\small\centering
 \begin{tabular}{rrrrr}\toprule
 Heaps &Players &States &Transitions \\\midrule
 3 &1 &10 &110 \\
@@ -386,14 +386,14 @@ Suppose that we wanted to model a similar cache system ourselves, but instead of
 
 \begin{figure}
     \centering
-    \includegraphics[width=0.5\linewidth]{figures/cacheFSM.pdf}
+    \includegraphics[width=0.8\linewidth]{figures/cacheFSM.pdf}
     \caption{The cache FSM from the RISC-V Mini.}
     \label{fig:cacheBefore}
 \end{figure}
 
 \begin{figure}
     \centering
-    \includegraphics[width=0.6\linewidth]{figures/cacheFSM2.pdf}
+    \includegraphics[width=0.95\linewidth]{figures/cacheFSM2.pdf}
     \caption{The cache FSM from RISC-V Mini with the MSI protocol.}
     \label{fig:cacheAfter}
 \end{figure}
@@ -406,7 +406,7 @@ We have described an FOP approach to constructing complex finite-state machines 
 
 We are currently working to create a fully feature-oriented cache using our system. Hardware caches are ripe for feature-oriented design as they contain many orthogonal features. For example, if we wanted to build a cache model even closer to the RDNA architecture, the original cache FSM would need to be write-through, 4-way set associative, and utilize an LRU replacement policy. Instead of forcing hardware designers into choosing an initial design and refactoring, write policy, allocation policy, replacement policy, and associativity could all be selectable features of the microarchitecture.
 
-Beyond the cache, it is tempting to extend this concept of feature-oriented hardware design to the chip as a whole. Hennessy and Patterson's original motivation behind the RISC-V architecture was to create an open and \emph{modular} instruction set. RISC-V applications span small, application-specific processors (such as the controllers for Western Digital storage products~\cite{WD:22} and Google's Titan M2 security chip~\cite{kleidermacher:21}) to high-performance processors (such at the SiFive P550~\cite{SiFive:22}). Instead of independently implementing each of these endpoints of RISC-V and the microarchitecture, we posit that an FOP implementation of RISC-V would be far more useful. In that world, hardware designers could swap and customize each of the ISA and microarchitectural features as needed.  For hardware designers, this could introduce a marketplace for feature exchange---something that the software community has enjoyed for over a half century.
+% Beyond the cache, it is tempting to extend this concept of feature-oriented hardware design to the chip as a whole. Hennessy and Patterson's original motivation behind the RISC-V architecture was to create an open and \emph{modular} instruction set. RISC-V applications span small, application-specific processors (such as the controllers for Western Digital storage products~\cite{WD:22} and Google's Titan M2 security chip~\cite{kleidermacher:21}) to high-performance processors (such at the SiFive P550~\cite{SiFive:22}). Instead of independently implementing each of these endpoints of RISC-V and the microarchitecture, we posit that an FOP implementation of RISC-V would be far more useful. In that world, hardware designers could swap and customize each of the ISA and microarchitectural features as needed.  For hardware designers, this could introduce a marketplace for feature exchange---something that the software community has enjoyed for over a half century.
 
 %%
 %% The next two lines define the bibliography style to be used, and
