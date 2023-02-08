@@ -52,7 +52,7 @@ St. Louis, MO, USA \\
 %% The abstract is a short summary of the work to be presented in the
 %% article.
 \begin{abstract}
-Reconfigurable architectures enable the economical deployment of application-specific designs, and RISC-V has emerged as an open and flexible processor for supporting such applications.  Generally, some portions of a design may be executed on the RISC-V processor with other portions present in circuitry surrounding the processor.  Notably, a particular application may need only a subset of the architecture and microarchitecture of a full-featured RISC-V implementation.
+Reconfigurable architectures enable the economical deployment of application-specific designs, and RISC-V has emerged as an open and flexible instruction set architecture for supporting such applications.  Generally, some portions of a design may be executed on the RISC-V processor with other portions present in circuitry surrounding the processor.  Notably, a particular application may need only a subset of the architecture and microarchitecture of a full-featured RISC-V implementation.
 
 In this paper we consider a feature-oriented approach for specifying finite-state machines, which form the basis of cache controllers (and other components) for RISC-V implementations, and which are commonly found in hardware designs. Using a library we constructed for Chisel, developers can apply features at will, with the resulting machine containing only the circuitry needed to support the desired features.  
 
@@ -68,15 +68,15 @@ Our approach offers significant leverage in supporting both the number and size 
 
 \section{Introduction}
 
-Projects such as RocketChip~\cite{chisel:riscv} and RISC-V~Mini~\cite{Kim:22} allow customization of RISC-V~\cite{riscvwebsite} processors that can then be deployed economically on FPGAs.  These resulting systems can offer better power and price performance than general-purpose processors while achieving a price point well below generation of an ASIC (application-specific integrated circuit).
+Projects such as RocketChip~\cite{chisel:riscv} and RISC-V~Mini~\cite{Kim:22} allow customization of RISC-V~\cite{riscvwebsite} processors that can then be deployed economically on FPGAs.  These resulting systems can offer better power and area performance than general-purpose processors while achieving a price point well below generation of an ASIC (application-specific integrated circuit).
 
-While some portions of the RISC-V characterization are easily included or excluded at will, based on a given application's needs, components such as cache, branch-prediction circuitry, and superscalar support are much more difficult to weave in or excise from a given characterization.
+While some portions of the RISC-V characterization are easily included or excluded at will, based on a given application's needs, components such as cache features, branch-prediction circuitry, and superscalar support are much more difficult to weave in or excise from a given characterization.
 
 In the RISC-V implementations cited above, components of the processor such as its cache and bus protocols rely on finite-state machines~(FSMs) to control the sequencing of the associated logic.   Hardware implementations commonly rely on FSMs at the core of their design, due to their simplicity and efficiency.
 
-In this paper, we consider FSM controllers in which  features should be included based an application's needs.  In a system with $n$~such independent features, there are $2^n$~possible endpoint designs that could be generated.  Maintaining those as distinct projects is unwieldy and inefficient.  Instead, we use techniques from aspect-oriented programming to weave features into a design on demand.  The resulting code base is significantly smaller, while maintaining the ability to generate any endpoint on demand.   The resulting characterization must still undergo synthesis, but the system in its feature-factored form is easier to maintain.  Moreover, testing of all feature combinations can be easily automated.
+In this paper, we consider FSM controllers in which  features should be included based an application's needs.  In a system with $n$~such independent features, there are $2^n$~possible endpoint designs that could be generated.  Maintaining those as distinct projects is unwieldy and inefficient.  Instead, we use techniques from aspect-oriented programming to weave features into a design on demand.  The resulting code base is significantly smaller, while maintaining the ability to generate any endpoint.   The resulting characterization must still undergo synthesis, but the system in its feature-factored form is easier to maintain.  Moreover, testing of all feature combinations can be easily automated.
 
-Hardware-generation languages such as Chisel~\cite{chisel:article} allow a designer to write a program whose \emph{execution} generates the hardware design. The program can be authored using para\-digms that promote efficiency, reuse, rigorous testing, and clarity of expression. Our work builds on the hardware-generation language Chisel~\cite{chisel:book}, which is in turn built on Scala~\cite{scala-overview-tech-report}. Chisel is a Scala-embedded domain-specific language with libraries that generate Verilog~\cite{verilog} when a Chisel program is executed.
+Hardware-\emph{generation} languages such as Chisel~\cite{chisel:article} allow a designer to write a program whose execution generates the hardware design. The program can be authored using para\-digms that promote efficiency, reuse, rigorous testing, and clarity of expression. Our work builds on the hardware-generation language Chisel~\cite{chisel:book}, which is in turn built on Scala~\cite{scala-overview-tech-report}. Chisel is a Scala-embedded domain-specific language with libraries that generate Verilog~\cite{verilog} when a Chisel program is executed.
 
 Chisel has proven itself robust in pedagogy and industry, serving as the basis for courses in digital logic~\cite{vlsicourse} and serving as a platform for describing full-featured RISC-V architectures~\cite{chisel:riscv}.  
 
@@ -88,6 +88,7 @@ In this paper, we consider a feature-oriented programming (FOP) approach to gene
     \item We combine both of the above ideas in Section~\ref{sec:cache} to the generation of an SIMD cache, similar to one currently in use by~AMD.  The parallelism of the cache is generated via the cross-product technique and a coherence scheme is imposed as a feature using the AOP technique.}
     \item We present results in Section~\ref{sec:results} that show our approach's significant leverage toward generating large, complex FSMs from relatively smaller and simpler ones. 
     \item The code we have developed for this work integrates with Chisel and is available via \texttt{github}.
+    \item We produced videos that demonstrate the use of our techniques to generate the results presented in this paper.
 \end{itemize}
 The FSMs generated using our approach enjoy benefits similar to feature-oriented software systems:
 \begin{itemize}
@@ -111,7 +112,7 @@ Our work concerns the generation of FSMs that incorporate desirable subsets of f
 
 This approach has also been attractive for managing product lines in which features evolve over time, affecting not only the base system but also other features~\cite{10.1145/2897695.2897701}. 
 
-An example from the software world of the benefits obtainable from an FOP approach to a featureful system concerns the CORBA~\cite{CORBA:00} Event Channel~\cite{CORBAService:02a}. The standard implementation is \emph{monolithic}, offering all possible features in all allowable combinations.  A decomposition of the Event Channel in terms of its features has demonstrated that useful subsets of those features use significantly fewer resources when formulated generatively~\cite{Pratap:04}.   
+An example from the software world of the benefits obtainable from an FOP approach to a featureful system concerns the CORBA~\cite{CORBA:00} Event Channel~\cite{CORBAService:02a}. The standard implementation was \emph{monolithic}, offering all possible features in all allowable combinations.  A decomposition of the Event Channel in terms of its features has demonstrated that useful subsets of those features use significantly fewer resources when formulated generatively~\cite{Pratap:04}.   
 
 
 \section{Generative FSM specifications}
@@ -122,7 +123,7 @@ We next illustrate our two FOP constructs for generating complex FSMs.  The firs
 
 As an example of a featureful hardware design, we consider an FSM implementation of a vending machine.   A state in our design carries the necessary (Scala) \emph{traits} to represent its role in the machine's operation:  the funds inserted and the potential products dispensed.  Our generative approach described below offers the following advantages over a monolithic design:
 \begin{itemize}
-    \item The design itself is simpler and clearer when described using FOP.  A monolithic design that tangles all features can be realized, but the resulting FSM does not readily make the features apparent.  Moreover, the work to create that monolithic implementation is tedious and error-prone.
+    \item The design itself is simpler and clearer when described using FOP.  A monolithic design that includes all features can be realized, but the resulting FSM does not readily make the features apparent.  Moreover, the work to create and maintain that monolithic implementation is tedious and error-prone.
     \item Modification of the FSM is greatly simplified.  For example, introduction of a new value of coinage automatically creates the necessary additional states and transitions.
     \item Scala traits allow elegant expression of an application's behaviors in support of FOP hardware design.
 \end{itemize}
@@ -148,7 +149,7 @@ The FSM is automatically generated by the advice for \textbf{Add Currency} and \
 
 A monolithic approach requires designers to specify all states and transitions for each feature subset, which is tedious and error-prone. With our approach, designers can verify the correctness of much smaller designs and then obtain much larger generative designs that are correct by their construction.
 
-In terms of leverage, consider an FSM for which there are $n$ orthogonal and independent features.  A valid system could thus be written or generated with or without each of those $n$ features.  This leads to $2^{n}$ feature-specific implementations.  While it is unlikely that each of those implementations would find an application, the ability to generate \emph{any} of them automatically offers significant leverage.
+In terms of leverage, consider an FSM for which there are~$n$ orthogonal and independent features.  A valid system could thus be written or generated with or without each of those~$n$ features.  This leads to~$2^{n}$ feature-specific implementations.  While it is unlikely that each of those implementations would find an application, the ability to generate \emph{any} of them automatically offers significant leverage.
 
 \begin{figure*}
     \centering
@@ -223,7 +224,7 @@ In terms of leverage, consider the cross-product generation of an FSM from two i
 We begin with an FSM $M$, typically defined as follows: 
 \[M = (Q, \Sigma, \delta, q_0, F)\]where $Q$ is a set of states, $\Sigma$ is a set of tokens, $\delta$ is the transition function, $q_0$ is the start state, and $F$ is the set of accepting states.  A state is typically denoted by an upper-case letter;  lower-case letters denote tokens and strings.  The symbol $\lambda$ denotes the empty string.  When an FSM is drawn as a graph, the start state receives an edge with no sources, and an accepting state is drawn with two concentric circles. 
 
-The formalism presented here are implemented in Chisel as a library we call Foam, described in Section~\ref{sec:foam}.  The examples and results presented in this paper were created using Foam.  
+The formalism presented here is implemented in Chisel as a library we call Foam, described in Section~\ref{sec:foam}.  The examples and results presented in this paper were created using Foam.  
 
 
 We follow~\cite{aspectsUML} in the treatment of aspects for FSMs.  Essentially, a state is like a method and a transition between states is like a method call.  The usual forms of before, after, and around advice are available (\emph{cf}. AspectJ~\cite{AspectJ:01}).   A cross-cutting feature is implemented using advice that modifies an FSM's behavior before, after, or during a transition between states.
@@ -241,7 +242,7 @@ In AOP terminology, a pointcut yields a set of \emph{join points} at which advic
     \label{fig:applyadvice}
 \end{figure}
 
-\paragraph{Advice} This specifies \emph{what} changes to the FSM should be applied at a join point. In the \textbf{Print Funds} feature, a new state is inserted following each token~``5'' in the FSM. The exact print statement generated by the advice is determined by the context contained within the join point. For example, \texttt{Print \textcent15} is generated because the state~``15'' follows the token~``5'' discussed earlier. Furthermore, to prevent infinite application of features, the advice for \textbf{Print Funds} checks to see if the context in the join point is already a printing state. If so, no advice is applied. Like pointcuts, advice is written in Chisel/Scala. 
+\paragraph{Advice} This specifies \emph{what} changes to the FSM should be applied at a join point. In the \textbf{Print Funds} feature, a new state is inserted following each token~``5'' in the FSM. The exact print statement generated by the advice is determined by the context contained within the join point. For example, \texttt{Print \textcent15} is generated because the state~``15'' follows the token~``5'' discussed earlier. Furthermore, to prevent unending application of features, the advice for \textbf{Print Funds} checks to see if the context in the join point is already a printing state. If so, no advice is applied. Like pointcuts, advice is written in Chisel/Scala. 
 
 Not only can advice insert new states, but it can also insert new symbols as well. Consider the \textbf{Peanut Warning} feature as an example. The pointcut is predicated upon a dispense state having a ``peanut'' trait. Because this is a \emph{before} pointcut, each join point has context that includes transition information that targets the state. In Figure~\ref{fig:applyadvice2} this is $10 \xrightarrow{\text{Peanut}}$ and $15 \xrightarrow{\text{Peanut}}$. The advice will insert a new ``Contains Nuts!''~state and ``Accept''~token for each of the join points. It also inserts a new transition on the ``Reject''~token whose destination is determined by the context contained in the join point.
 
@@ -271,16 +272,16 @@ We provide a series of extendable base classes to represent FSMs. The library bu
 The library currently supports emitting DOT and Verilog code. Code generation is decoupled from the creation of the FSMs, as the library generates code based off the internal data structures, not the Scala code itself. DOT and Verilog code are generated by Graphviz4S~\cite{Ldpe2G:19} and Chisel, respectively. 
 
 \section{Case studies and results}\label{sec:results}
-Here we present three case studies to demonstrate the generative ability of our framework: a Vending Machine, the game of Nim, and SIMD cache coherence.
+Here we present three case studies to demonstrate the generative ability of our framework: a Vending Machine, the game of Nim, and a SIMD cache with a coherence protocol.
 
 \subsection{Vending Machine}\label{sec:vendresults}
-We implemented all the features from Section \ref{sec:vend} in our library. The resulting FSMs were then emitted as Verilog. The Verilog was synthesized on a xc7a35tcpg236-1 FPGA using Vivado 2022.1. Below we report the number of generated states, transitions in the FSM, and the space in LUTs that the FSM took up in on the FPGA.
+We implemented all the features from Section \ref{sec:vend} in our library. The resulting FSMs were then emitted as Verilog. The Verilog was synthesized on a xc7a35tcpg236-1 FPGA using Vivado 2022.1. Below we report the number of generated states, transitions in the FSM, and the space in LUTs used by the FSM on the FPGA.
 
-Figure~\ref{fig:vmData} shows the results for different endpoints generated by our library. For our tests, we held the currency threshold at 100. Every machine contains 5, 10, and 25 value coins; and 4 products of value 25, 50, 75, and 100. This is captured by \emph{None}. In the first set of results, each feature is shown by itself. Even single features can greatly increase the components in the FSM. The \textbf{Buy More} feature (denoted B) by itself more than doubles the number of states and transitions. This impressive leverage is further exemplified when combining features. 
+Figure~\ref{fig:vmData} shows the results for different endpoints generated by our library. For our tests, we held the currency threshold at 100. Every machine contains 5, 10, and 25 value coins; and 4 products of value 25, 50, 75, and 100. This is captured by feature set ``None''. In the first set of results, each feature is shown by itself. Even single features can greatly increase the components in the FSM. The \textbf{Buy More} feature (denoted B) by itself more than doubles the number of states and transitions. This impressive leverage is further exemplified when combining features. 
 
-In these cases the number of states increase by 2.5x in the simplest endpoint up to 4.6x in the most complex, and the transitions by 2.5x and 5x respectively. Recall, this is in a relatively simple vending machine that can only accept up to 100 units of value. Simply doubling the amount of accepted value to 200 creates a machine with 284 states (10.5x increase over the base) and 3113 transitions (16x increase over the base). However, this is accomplished in our library with relatively few lines of code. The largest feature in terms of code is \textbf{Peanut Warning}, which is implemented in just 39 lines.
+In these cases the number of states increase by 2.5x in the simplest endpoint, up to 4.6x in the most complex, and the transitions by 2.5x and 5x respectively. Recall, this is a relatively simple vending machine that can only accept up to 100 units of value. Simply doubling the amount of accepted value to 200 creates a machine with 284 states (10.5x increase over the base) and 3113 transitions (16x increase over the base). However, this is accomplished in our library with relatively few lines of code. The largest feature in terms of code is \textbf{Peanut Warning}, which is implemented in just 39 lines.
 
-Despite the growing number of generated states and transitions as the features increase in Figure~\ref{fig:vmData}, the resulting hardware resources, in this case Look Up Tables (LUTs), used by the FSM are relatively modest. This is because hardware synthesis tools can represent states using a linear encoding scheme.  For an FSM with $n$ states, each state takes only $O(\log{n})$ space when encoded as an integer.  However, the \emph{specification} of that circuit to a synthesis tool must be expressed state-by-state.  If the number of transitions per state is bounded by a constant, then the specification (\textit{e.g.}, lines of Verilog) takes $O(n)$ space.  Our generative approach to hardware FSMs opens hardware designers to implementing much larger FSMs than are currently sustainable with a hand-coded approach.
+Despite the growing number of generated states and transitions as the features increase in Figure~\ref{fig:vmData}, the resulting hardware resources, in this case Look Up Tables (LUTs), used by the FSM are relatively modest. This is because hardware synthesis tools can represent states using a linear encoding scheme.  For an FSM with $n$ states, each state takes only $O(\log{n})$ space when encoded as an integer.  However, the \emph{specification} of that circuit to a synthesis tool must be expressed state-by-state.  If the number of transitions per state is bounded by a constant, then the specification (\textit{e.g.}, lines of Verilog) takes $O(n)$ space.  Our generative approach to specifying FSMs allows  designers to implement much larger FSMs than are currently sustainable with a hand-coded approach.
 
 \begin{figure}\small
     \centering
@@ -304,7 +305,7 @@ PICWB &124 &1353 &220 \\
 
 \subsection{Nim}\label{sec:nimresults}
 
-We implemented all the features described in Section~\ref{sec:nim} and studied these variations of Nim: traditional Nim and circle Nim. All results assume each game is mis\`{e}re play with at least one heap and one player. We further assume that the players alternate in a round-robin fashion. The details of each variation are described below, along with the number of generated states and transitions within the created FSMs. 
+We implemented all the features described in Section~\ref{sec:nim} and present two variations of Nim: traditional Nim and circle Nim. All results assume each game is mis\`{e}re play with at least one heap and one player. We further assume that the players alternate in a round-robin fashion. The details of each variation are described below, along with the number of generated states and transitions within the created FSMs. 
 
 \paragraph{Traditional Nim}
 The classical game of Nim contains two players and three heaps, though there are no restrictions on the number of players or quantity of heaps. The defining characteristic of traditional Nim is that, each turn, the current player may only remove sticks from a single heap of their choosing, and must take between 1 and all the remaining sticks within that heap. The game ends when all heaps contain zero sticks. 
@@ -378,11 +379,11 @@ Heaps &Players &States &Transitions \\\midrule
 \end{figure}
 
 \subsection{SIMD Caches}\label{sec:cache}
-Ultimately, the goal of this work is to make the design of complex hardware easier through generation. Here, we will demonstrate how we can combine our techniques with ``off-the-shelf'' components to generate SIMD Caches that are coherent with each other. While we recognize that this is purely a pedagogical example, it is modeled off the real-world RDNA Architecture from AMD~\cite{AMD:19}.
+Ultimately, the goal of this work is to make the design of complex hardware easier through generation. Here, we will demonstrate how we can combine our techniques with ``off-the-shelf'' components to generate SIMD Caches that are coherent with each other. While we present this as a pedagogical example, it is modeled off the real-world RDNA Architecture from AMD~\cite{AMD:19}.
 
 The RDNA architecture packages two SIMD execution units into a single unit called a \emph{workgroup} of processors. Each workgroup shares L0 cache between each SIMD unit. This cache is kept coherent through serialization of the execution when conflicts are detected. Two workgroups are then packaged together into a \emph{Dual Compute Unit} (DCU). Currently, the two L0s within a DCU are kept coherent via software. 
 
-Suppose that we wanted to model a similar cache system ourselves, but instead of handling data conflicts between the two SIMD units in a workgroup processor, we use the MSI cache coherence protocol~\cite{Good83}. For this case study, we have selected the ready-made cache from RISC-V Mini~\cite{Kim:22}. As-is, this cache, shown in Figure \ref{fig:cacheBefore}, is directly connected to main memory in a single core system and does not have any coherence protocol. Using a feature-oriented approach, we can retrofit this cache with advice that implements the MSI protocol, shown in Figure \ref{fig:cacheAfter}. In order to model the interactions between the two now coherent caches, we can cross-product the two. This results in an FSM with 729 states and 2,461,104 transitions. Hardware designers could use this sort of modeling for correctness verification, however that is beyond the scope of this paper.
+Suppose that we wanted to model a similar cache system ourselves, but instead of handling data conflicts between the two SIMD units in a workgroup processor, we use the MSI cache coherence protocol~\cite{Good83}. For this case study, we have selected the ready-made cache from RISC-V Mini~\cite{Kim:22}. As-is, this cache, shown in Figure \ref{fig:cacheBefore}, is directly connected to main memory in a single core system and does not have any coherence protocol. Using a feature-oriented approach, we can retrofit this cache with advice that implements the MSI protocol, shown in Figure \ref{fig:cacheAfter}. To model the interactions between the two, now-coherent caches, we can build the cross-product of the two. This results in an FSM with 729 states and 2,461,104 transitions. Hardware designers could use this sort of modeling for correctness verification; however, that is beyond the scope of this paper.
 
 \begin{figure}
     \centering
